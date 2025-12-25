@@ -1,0 +1,13 @@
+{
+  "name": "gen-cok-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=apps/client\" \"npm run dev --workspace=apps/server\" --names \"CLIENT,SERVER\" --prefix-colors \"cyan,magenta\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Inter", "sans-serif";
+
+  --color-primary: #6467f2;
+  --color-secondary: #232448;
+  --color-text-muted: #9293c9;
+  --color-background-light: #f6f6f8;
+  --color-background-dark: #111122;
+  --color-surface-dark: #16172b;
+  --color-surface-light: #ffffff;
+  --color-input-dark: #232448;
+  --color-border-dark: #2a2a3c;
+  --color-border-light: #e5e7eb;
+  --color-primary-hover: #4f52d1;
+  --color-surface-border: #323367;
+}
+
+@layer base {
+  body {
+    font-family: "Inter", sans-serif;
+    @apply text-gray-900 dark:text-white bg-background-light dark:bg-background-dark min-h-screen flex flex-col overflow-x-hidden;
+  }
+}
+
+/* RGB Animated Border */
+@keyframes rgb-rotate {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+.animate-rgb {
+  animation: rgb-rotate 3s linear infinite;
+}
