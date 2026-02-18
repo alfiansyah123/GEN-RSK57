@@ -11,6 +11,7 @@ export default function TrackerAuthGuard() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [passwordInput, setPasswordInput] = useState('');
     const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     // We can expose trackerData via context if needed, 
     // but for now let's just handle the gate. 
     // Ideally we pass data down, but Outlet context is an option.
@@ -112,22 +113,32 @@ export default function TrackerAuthGuard() {
                     </div>
 
                     <form onSubmit={handlePasswordSubmit} className="space-y-6">
-                        <div>
+                        <div className="relative">
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 value={passwordInput}
                                 onChange={(e) => setPasswordInput(e.target.value)}
-                                className={`w-full px-4 py-3 rounded-xl outline-none transition-all ${isDark
+                                className={`w-full px-4 py-3 rounded-xl outline-none transition-all pr-12 ${isDark
                                     ? 'bg-[#16172b] text-white border-transparent focus:ring-2 focus:ring-primary placeholder-slate-600'
                                     : 'bg-gray-50 text-gray-900 border-gray-200 focus:ring-2 focus:ring-primary focus:bg-white'
                                     }`}
                                 placeholder="Enter Password..."
                                 autoFocus
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className={`absolute right-4 top-1/2 -translate-y-1/2 transition-colors ${isDark ? 'text-slate-500 hover:text-white' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                <span className="material-symbols-outlined text-[20px]">
+                                    {showPassword ? 'visibility_off' : 'visibility'}
+                                </span>
+                            </button>
                         </div>
 
                         {error && (
-                            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm text-center">
+                            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-2 justify-center">
+                                <span className="material-symbols-outlined text-[18px]">error</span>
                                 {error}
                             </div>
                         )}
