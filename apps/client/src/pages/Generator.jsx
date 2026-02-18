@@ -78,6 +78,16 @@ export default function Generator() {
         }
     }, [campaigns, selectedNetwork]);
 
+    // Helper to generate random Click ID
+    const generateClickId = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        for (let i = 0; i < 32; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+    };
+
     const handleGenerate = async () => {
         if (!selectedCampaign) {
             alert('No campaign found for this network. Please create one first.');
