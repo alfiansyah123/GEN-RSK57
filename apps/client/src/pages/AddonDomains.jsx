@@ -185,7 +185,7 @@ export default function AddonDomains() {
                                             <StatusBadge
                                                 status={row.status}
                                                 isDark={isDark}
-                                                onClick={() => handleToggleStatus(row.dbId, row.status)}
+                                                onClick={() => handleToggleStatus(row.id, row.status)}
                                             />
                                         </td>
                                         <td className="p-4 pr-6 text-right">
@@ -196,7 +196,7 @@ export default function AddonDomains() {
                                                 <button
                                                     aria-label="Delete"
                                                     className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${isDark ? 'text-slate-400 hover:text-red-500 hover:bg-red-500/10' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'}`}
-                                                    onClick={() => handleDelete(row.title, row.dbId)}
+                                                    onClick={() => handleDelete(row.title, row.id)}
                                                 >
                                                     <span className="material-symbols-outlined text-[18px]">delete</span>
                                                 </button>
