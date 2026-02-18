@@ -1,17 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import AddonDomainModal from '../components/AddonDomainModal';
 import GeneratorNavigation from '../components/GeneratorNavigation';
+import { supabase } from '../lib/supabaseClient';
 
 export default function GeneratorAddonDomain() {
     const { trackerId } = useParams();
     const { isDark, toggleTheme } = useTheme();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // State for domains (will be fetched from API)
+    // State for domains
     const [domains, setDomains] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+
+    const fetchDomains = async () => {
+        setIsLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('domain')
+                .select('*')
+                .order('addedAt', { ascending: false });
+
+            if (error) throw error;
+            setDomains((data || []).map(d => ({
+                ...d,
+                title: d.name,
+                added: d.addedAt ? new Date(d.addedAt).toLocaleDateString() : '-',
+                ssl: d.ssl || 'Pending',
+                status: d.status || 'Active',
+            })));
+        } catch (error) {
+            console.error('Error fetching domains:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchDomains();
+    }, []);
+
+    const handleDelete = async (id) => {
+        if (!confirm('Delete this domain?')) return;
+        try {
+            const { error } = await supabase.from('domain').delete().eq('id', id);
+            if (error) throw error;
+            setDomains(prev => prev.filter(d => d.id !== id));
+        } catch (error) {
+            console.error('Error deleting domain:', error);
+        }
+    };
 
     return (
         <div className={`font-display flex flex-col min-h-screen overflow-y-auto transition-colors ${isDark ? 'bg-transparent text-white' : 'bg-gray-50 text-gray-900'}`}>
