@@ -1,71 +1,84 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useTheme } from '../context/ThemeContext';
+import { supabase } from '../lib/supabaseClient';
 
 const MAX_ITEMS = 5;
 
 export default function LiveTraffic() {
-    const { isDark } = useTheme();
     const [traffic, setTraffic] = useState([]);
-    const [isPaused, setIsPaused] = useState(false);
-    const wsRef = useRef(null);
 
+    // Realtime Traffic Logic (Supabase)
     useEffect(() => {
-        // Connect to WebSocket
-        const wsUrl = `ws://localhost:3000/ws/live-traffic`;
-        const ws = new WebSocket(wsUrl);
-        wsRef.current = ws;
+        // Initial fetch of recent clicks
+        const fetchInitialTraffic = async () => {
+            const { data, error } = await supabase
+                .from('click')
+                .select(`
+                    id,
+                    country,
+                    createdAt,
+                    link (
+                        trackerId,
+                        network
+                    )
+                `)
+                .order('createdAt', { ascending: false })
+                .limit(MAX_ITEMS);
 
-        ws.onopen = () => {
-            console.log('Connected to Live Traffic WebSocket');
-        };
-
-        ws.onmessage = (event) => {
-            if (isPaused) return;
-
-            try {
-                const message = JSON.parse(event.data);
-                if (message.type === 'click') {
-                    const newClick = {
-                        id: Date.now() + Math.random(), // Unique ID for key
-                        country: message.data.country,
-                        countryCode: message.data.country || 'Unknown',
-                        name: message.data.trackerId || 'Unknown',
-                        flag: message.data.country
-                            ? `https://flagcdn.com/w20/${message.data.country.toLowerCase()}.png`
-                            : 'https://flagcdn.com/w20/un.png'
-                    };
-
-                    setTraffic((prev) => {
-                        const newState = [newClick, ...prev];
-                        return newState.slice(0, MAX_ITEMS); // Keep only last 5
-                    });
-                }
-            } catch (error) {
-                console.error('Error parsing WebSocket message:', error);
+            if (data) {
+                const formatted = data.map(item => ({
+                    id: item.id,
+                    country: item.country,
+                    countryCode: item.country || 'Unknown',
+                    name: item.link?.trackerId || 'Unknown',
+                    network: item.link?.network || 'Unknown',
+                    flag: (item.country && item.country.toLowerCase() !== 'xx')
+                        ? `https://flagcdn.com/w20/${item.country.toLowerCase()}.png`
+                        : 'https://flagcdn.com/w20/un.png'
+                }));
+                setTraffic(formatted);
             }
         };
+
+        fetchInitialTraffic();
+
+        // Subscribe to real-time inserts on 'click' table
+        const subscription = supabase
+            .channel('live-traffic')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'click' }, async (payload) => {
+                const newClick = payload.new;
+
+                // Fetch related link info for the new click
+                const { data: linkData } = await supabase
+                    .from('link')
+                    .select('trackerId, network')
+                    .eq('id', newClick.linkId)
+                    .single();
+
+                const newItem = {
+                    id: newClick.id,
+                    country: newClick.country,
+                    countryCode: newClick.country || 'Unknown',
+                    name: linkData?.trackerId || 'Unknown',
+                    network: linkData?.network || 'Unknown',
+                    flag: (newClick.country && newClick.country.toLowerCase() !== 'xx')
+                        ? `https://flagcdn.com/w20/${newClick.country.toLowerCase()}.png`
+                        : 'https://flagcdn.com/w20/un.png'
+                };
+
+                setTraffic(prev => [newItem, ...prev].slice(0, MAX_ITEMS));
+            })
+            .subscribe();
 
         return () => {
-            if (wsRef.current) {
-                wsRef.current.close();
-            }
+            subscription.unsubscribe();
         };
-    }, [isPaused]);
+    }, []);
 
     return (
-        <div className={`rounded-xl border p-4 ${isDark ? 'bg-surface-dark border-surface-border' : 'bg-white border-gray-200'}`}>
+        <div className="rounded-xl p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-3">
-                <h3 className={`text-xs font-bold uppercase ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                <h3 className="text-xs font-bold uppercase text-gray-900 dark:text-white">
                     Live Traffic
                 </h3>
-                <button
-                    onClick={() => setIsPaused(!isPaused)}
-                    className={`transition-colors ${isDark ? 'text-slate-500 hover:text-primary' : 'text-gray-400 hover:text-primary'}`}
-                >
-                    <span className="material-symbols-outlined text-base">
-                        {isPaused ? 'play_arrow' : 'pause'}
-                    </span>
-                </button>
             </div>
 
             <div className="space-y-2 min-h-[150px]">
@@ -78,9 +91,9 @@ export default function LiveTraffic() {
                     traffic.map((item, index) => (
                         <div
                             key={item.id}
-                            className={`flex items-center rounded p-2 shadow-sm border animate-in slide-in-from-top-2 fade-in duration-300 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} ${index === 0 ? 'animate-pulse' : ''}`}
+                            className={`flex items-center rounded p-2 shadow-sm border animate-in slide-in-from-top-2 fade-in duration-300 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 ${index === 0 ? 'animate-pulse' : ''}`}
                         >
-                            <div className={`flex-shrink-0 w-8 h-5 rounded mr-2 overflow-hidden relative ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                            <div className="flex-shrink-0 w-8 h-5 rounded mr-2 overflow-hidden relative bg-gray-200 dark:bg-gray-600">
                                 <img
                                     alt={`${item.country} Flag`}
                                     className="object-cover w-full h-full"
@@ -88,9 +101,16 @@ export default function LiveTraffic() {
                                     onError={(e) => { e.target.style.display = 'none'; }}
                                 />
                             </div>
-                            <span className="text-xs font-mono font-medium truncate text-blue-500">
-                                {item.name}
-                            </span>
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-mono font-medium truncate text-blue-500">
+                                        {item.name}
+                                    </span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-600 text-slate-600 dark:text-slate-300 ml-2 truncate max-w-[80px]">
+                                        {item.network}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     ))
                 )}

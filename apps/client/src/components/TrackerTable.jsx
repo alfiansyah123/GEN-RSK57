@@ -36,11 +36,11 @@ export default function TrackerTable({ trackers = [], onEdit, onDelete }) {
     const { isDark } = useTheme();
 
     return (
-        <div className={`flex-1 flex flex-col rounded-xl border overflow-hidden shadow-2xl ${isDark ? 'bg-[#16172b] border-[#232448]' : 'bg-white border-gray-200'}`}>
+        <div className={`flex-1 flex flex-col rounded-xl border overflow-hidden shadow-2xl transition-colors duration-300 ${isDark ? 'glass-panel border-white/10' : 'bg-white border-gray-200'}`}>
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className={`border-b ${isDark ? 'bg-[#1a1b2e] border-[#232448]' : 'bg-gray-50 border-gray-200'}`}>
+                        <tr className={`border-b ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
                             <th className={`p-4 text-xs font-semibold tracking-wide uppercase w-[100px] ${isDark ? 'text-[#9293c9]' : 'text-gray-500'}`}>ID</th>
                             <th className={`p-4 text-xs font-semibold tracking-wide uppercase ${isDark ? 'text-[#9293c9]' : 'text-gray-500'}`}>Tracker Name</th>
                             <th className={`p-4 text-xs font-semibold tracking-wide uppercase ${isDark ? 'text-[#9293c9]' : 'text-gray-500'}`}>Password</th>
@@ -79,15 +79,22 @@ export default function TrackerTable({ trackers = [], onEdit, onDelete }) {
                                 </td>
                                 <td className="p-4">
                                     <div className="flex items-center gap-2 max-w-[250px]">
-                                        <a href={row.targetUrl} target="_blank" rel="noopener noreferrer" className="truncate text-primary text-sm underline decoration-primary/30 underline-offset-4 cursor-pointer hover:text-primary/80">
-                                            {row.targetUrl}
-                                        </a>
-                                        <button
-                                            className={`${isDark ? 'text-[#9293c9] hover:text-white' : 'text-gray-400 hover:text-gray-900'}`}
-                                            onClick={() => navigator.clipboard.writeText(row.targetUrl)}
-                                        >
-                                            <span className="material-symbols-outlined text-[16px]">content_copy</span>
-                                        </button>
+                                        {(() => {
+                                            const generatedUrl = `${window.location.origin}/${row.slug}`;
+                                            return (
+                                                <>
+                                                    <a href={generatedUrl} target="_blank" rel="noopener noreferrer" className="truncate text-primary text-sm underline decoration-primary/30 underline-offset-4 cursor-pointer hover:text-primary/80">
+                                                        {generatedUrl}
+                                                    </a>
+                                                    <button
+                                                        className={`${isDark ? 'text-[#9293c9] hover:text-white' : 'text-gray-400 hover:text-gray-900'}`}
+                                                        onClick={() => navigator.clipboard.writeText(generatedUrl)}
+                                                    >
+                                                        <span className="material-symbols-outlined text-[16px]">content_copy</span>
+                                                    </button>
+                                                </>
+                                            );
+                                        })()}
                                     </div>
                                 </td>
                                 <td className="p-4">

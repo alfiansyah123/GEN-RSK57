@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Outlet } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { supabase } from '../lib/supabaseClient';
 
 export default function TrackerAuthGuard() {
     const { trackerId } = useParams();
@@ -24,29 +25,33 @@ export default function TrackerAuthGuard() {
 
         // 1. Check Session Storage
         const sessionKey = `tracker_auth_${trackerId}`;
+        /* // Commented out session check for dev/testing, uncomment in prod if needed
         if (sessionStorage.getItem(sessionKey) === 'true') {
             setIsAuthenticated(true);
             setIsLoading(false);
             return;
-        }
+        } 
+        */
 
-        // 2. Check Backend if we need password
+        // 2. Check Supabase
         try {
-            const response = await fetch(`http://localhost:3000/api/trackers/slug/${trackerId}`);
-            if (response.ok) {
-                const data = await response.json();
-                if (!data.hasPassword) {
-                    // No password needed, mark as authenticated (and maybe save session to avoid refetch?)
-                    // Actually, if no password, we don't strictly *need* to save session, 
-                    // but it saves a fetch. Let's act as if auth is required but passed.
+            const { data, error } = await supabase
+                .from('tracker')
+                .select('password')
+                .eq('slug', trackerId)
+                .single();
+
+            if (error || !data) {
+                setError('Tracker not found');
+            } else {
+                // If tracker has no password, auto-auth
+                if (!data.password) {
                     setIsAuthenticated(true);
                     sessionStorage.setItem(sessionKey, 'true');
                 } else {
-                    // Password needed, and we don't have session -> Locked
+                    // Password needed
                     setIsAuthenticated(false);
                 }
-            } else {
-                setError('Tracker not found');
             }
         } catch (err) {
             setError('Failed to connect to server');
@@ -60,13 +65,13 @@ export default function TrackerAuthGuard() {
         setError('');
 
         try {
-            const response = await fetch('http://localhost:3000/api/trackers/verify-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ slug: trackerId, password: passwordInput })
-            });
+            const { data, error } = await supabase
+                .from('tracker')
+                .select('password')
+                .eq('slug', trackerId)
+                .single();
 
-            if (response.ok) {
+            if (data && data.password === passwordInput) {
                 setIsAuthenticated(true);
                 sessionStorage.setItem(`tracker_auth_${trackerId}`, 'true');
             } else {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AddonDomainModal from '../components/AddonDomainModal';
 import { useTheme } from '../context/ThemeContext';
+import { supabase } from '../lib/supabaseClient';
 
 
 
@@ -41,15 +42,19 @@ export default function AddonDomains() {
     const [domains, setDomains] = useState([]);
     const { isDark } = useTheme();
 
-    const fetchDomains = () => {
-        fetch('http://localhost:3000/api/addon-domains')
-            .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data)) {
-                    setDomains(data);
-                }
-            })
-            .catch(err => console.error('Failed to fetch domains:', err));
+    const fetchDomains = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('domain')
+                .select('*')
+                .order('addedAt', { ascending: false });
+
+            if (error) throw error;
+            // Map addedAt to addedAt (Supabase returns match)
+            setDomains(data || []);
+        } catch (err) {
+            console.error('Failed to fetch domains:', err);
+        }
     };
 
     // Fetch on mount
@@ -57,13 +62,15 @@ export default function AddonDomains() {
         fetchDomains();
     }, []);
 
-    const handleDelete = async (id, dbId) => {
-        if (window.confirm(`Are you sure you want to delete ${id}?`)) {
+    const handleDelete = async (title, id) => {
+        if (window.confirm(`Are you sure you want to delete ${title}?`)) {
             try {
-                const response = await fetch(`http://localhost:3000/api/addon-domains/${dbId}`, {
-                    method: 'DELETE'
-                });
-                if (response.ok) {
+                const { error } = await supabase
+                    .from('domain')
+                    .delete()
+                    .eq('id', id);
+
+                if (!error) {
                     fetchDomains();
                 } else {
                     alert('Failed to delete domain');
@@ -75,20 +82,19 @@ export default function AddonDomains() {
         }
     };
 
-    const handleToggleStatus = async (dbId, currentStatus) => {
+    const handleToggleStatus = async (id, currentStatus) => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
 
         try {
-            const response = await fetch(`http://localhost:3000/api/addon-domains/${dbId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
-            });
+            const { error } = await supabase
+                .from('domain')
+                .update({ status: newStatus })
+                .eq('id', id);
 
-            if (response.ok) {
+            if (!error) {
                 // Optimistic update
                 setDomains(prev => prev.map(d =>
-                    d.dbId === dbId ? { ...d, status: newStatus } : d
+                    d.id === id ? { ...d, status: newStatus } : d
                 ));
             } else {
                 alert('Failed to update status');
@@ -123,7 +129,7 @@ export default function AddonDomains() {
                 <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
                     {/* Search */}
                     <div className="w-full md:w-96 h-12">
-                        <label className={`relative flex w-full items-center h-full rounded-lg focus-within:ring-2 ring-primary/50 transition-shadow shadow-none overflow-hidden border ${isDark ? 'bg-surface-dark border-transparent' : 'bg-white border-gray-200 shadow-sm'}`}>
+                        <label className={`relative flex w-full items-center h-full rounded-lg focus-within:ring-2 ring-primary/50 transition-shadow shadow-none overflow-hidden border ${isDark ? 'glass-input border-transparent' : 'bg-white border-gray-200 shadow-sm'}`}>
                             <div className="grid place-items-center h-full w-12 text-text-muted bg-transparent">
                                 <span className="material-symbols-outlined">search</span>
                             </div>
@@ -137,7 +143,7 @@ export default function AddonDomains() {
                     </div>
                     {/* Buttons */}
                     <div className="flex gap-3 h-12">
-                        <button className={`flex items-center justify-center px-4 rounded-lg transition-colors gap-2 text-sm font-bold min-w-[100px] h-full cursor-pointer border ${isDark ? 'bg-surface-dark text-white border-transparent hover:bg-[#2d2e5c]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`} onClick={fetchDomains}>
+                        <button className={`flex items-center justify-center px-4 rounded-lg transition-colors gap-2 text-sm font-bold min-w-[100px] h-full cursor-pointer border ${isDark ? 'glass-card border-transparent hover:bg-white/10' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`} onClick={fetchDomains}>
                             <span className="material-symbols-outlined text-[20px]">refresh</span>
                             <span>Refresh</span>
                         </button>
@@ -152,11 +158,11 @@ export default function AddonDomains() {
                 </div>
 
                 {/* Table Section */}
-                <div className={`w-full rounded-xl shadow-sm border overflow-hidden flex flex-col transition-colors ${isDark ? 'bg-surface-dark border-secondary' : 'bg-white border-gray-200'}`}>
+                <div className={`w-full rounded-xl shadow-sm border overflow-hidden flex flex-col transition-colors ${isDark ? 'glass-panel border-white/10' : 'bg-white border-gray-200'}`}>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className={`border-b ${isDark ? 'bg-[#1e1e2d] border-secondary' : 'bg-gray-50 border-gray-200'}`}>
+                                <tr className={`border-b ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
                                     <th className={`p-4 pl-6 text-xs font-semibold uppercase tracking-wider w-[140px] ${isDark ? 'text-text-muted' : 'text-gray-500'}`}>Empid</th>
                                     <th className={`p-4 text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-text-muted' : 'text-gray-500'}`}>Domain Title</th>
                                     <th className={`p-4 text-xs font-semibold uppercase tracking-wider w-[150px] ${isDark ? 'text-text-muted' : 'text-gray-500'}`}>Status</th>
@@ -203,7 +209,7 @@ export default function AddonDomains() {
                     </div>
 
                     {/* Pagination */}
-                    <div className={`flex items-center justify-between p-4 px-6 border-t ${isDark ? 'border-secondary bg-[#1E1F36]' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className={`flex items-center justify-between p-4 px-6 border-t ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
                         <p className={`text-sm ${isDark ? 'text-text-muted' : 'text-gray-500'}`}>
                             Showing <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{domains.length > 0 ? '1' : '0'}-{domains.length}</span> of <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{domains.length}</span>
                         </p>

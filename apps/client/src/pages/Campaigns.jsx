@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CreateCampaignModal from '../components/CreateCampaignModal';
 import { useTheme } from '../context/ThemeContext';
+import { supabase } from '../lib/supabaseClient';
 
 const NetworkBadge = ({ network }) => {
     // Color based on network name
@@ -32,11 +33,13 @@ export default function Campaigns() {
     const fetchCampaigns = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:3000/api/campaigns');
-            if (response.ok) {
-                const data = await response.json();
-                setCampaigns(data);
-            }
+            const { data, error } = await supabase
+                .from('campaign')
+                .select('*')
+                .order('createdAt', { ascending: false });
+
+            if (error) throw error;
+            setCampaigns(data || []);
         } catch (error) {
             console.error('Error fetching campaigns:', error);
         } finally {
@@ -55,12 +58,13 @@ export default function Campaigns() {
     const handleDelete = async (id) => {
         if (!confirm('Are you sure you want to delete this campaign?')) return;
         try {
-            const response = await fetch(`http://localhost:3000/api/campaigns/${id}`, {
-                method: 'DELETE'
-            });
-            if (response.ok) {
-                setCampaigns(prev => prev.filter(c => c.id !== id));
-            }
+            const { error } = await supabase
+                .from('campaign')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            setCampaigns(prev => prev.filter(c => c.id !== id));
         } catch (error) {
             console.error('Error deleting campaign:', error);
         }
@@ -85,17 +89,17 @@ export default function Campaigns() {
                 </div>
 
                 {/* Toolbar */}
-                <div className={`flex flex-col sm:flex-row justify-between gap-4 p-4 rounded-xl border mt-4 transition-colors ${isDark ? 'bg-surface-dark border-secondary' : 'bg-white border-gray-200 shadow-sm'}`}>
+                <div className={`flex flex-col sm:flex-row justify-between gap-4 p-4 rounded-xl border mt-4 transition-colors ${isDark ? 'glass-card border-white/10' : 'bg-white border-gray-200 shadow-sm'}`}>
                     <div className="flex flex-1 gap-3">
                         <div className="relative flex-1 max-w-md">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <span className="material-symbols-outlined text-text-muted text-[20px]">search</span>
                             </div>
-                            <input className={`block w-full pl-10 pr-3 py-2.5 border-none rounded-lg leading-5 outline-none focus:ring-2 focus:ring-primary sm:text-sm ${isDark ? 'bg-[#1e1e2d] text-white placeholder-text-muted' : 'bg-gray-100 text-gray-900 placeholder-gray-400'}`} placeholder="Search by Offer or Network..." type="text" />
+                            <input className={`block w-full pl-10 pr-3 py-2.5 border-none rounded-lg leading-5 outline-none focus:ring-2 focus:ring-primary sm:text-sm ${isDark ? 'glass-input text-white placeholder-text-muted' : 'bg-gray-100 text-gray-900 placeholder-gray-400'}`} placeholder="Search by Offer or Network..." type="text" />
                         </div>
                         <button
                             onClick={fetchCampaigns}
-                            className={`p-2.5 rounded-lg transition-colors border border-transparent focus:outline-none focus:ring-2 focus:ring-primary ${isDark ? 'bg-[#1e1e2d] text-text-muted hover:text-white hover:bg-[#2a2a3c]' : 'bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200'}`}
+                            className={`p-2.5 rounded-lg transition-colors border border-transparent focus:outline-none focus:ring-2 focus:ring-primary ${isDark ? 'glass-input text-text-muted hover:text-white' : 'bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200'}`}
                             title="Refresh Data"
                         >
                             <span className="material-symbols-outlined text-[20px]">refresh</span>
@@ -104,11 +108,11 @@ export default function Campaigns() {
                 </div>
 
                 {/* Table Section */}
-                <div className={`rounded-xl border overflow-hidden shadow-sm transition-colors ${isDark ? 'bg-surface-dark border-secondary' : 'bg-white border-gray-200'}`}>
+                <div className={`rounded-xl border overflow-hidden shadow-sm transition-colors ${isDark ? 'glass-panel border-white/10' : 'bg-white border-gray-200'}`}>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className={`border-b ${isDark ? 'bg-[#1e1e2d] border-secondary' : 'bg-gray-50 border-gray-200'}`}>
+                                <tr className={`border-b ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
                                     <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider w-20 ${isDark ? 'text-text-muted' : 'text-gray-500'}`}>ID</th>
                                     <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider w-28 ${isDark ? 'text-text-muted' : 'text-gray-500'}`}>Country</th>
                                     <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider w-32 ${isDark ? 'text-text-muted' : 'text-gray-500'}`}>User Agent</th>
@@ -173,7 +177,7 @@ export default function Campaigns() {
                     <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                         Showing <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>1</span> to <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>5</span> of <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>128</span> results
                     </p>
-                    <nav className={`flex items-center gap-1 p-1 rounded-full border transition-colors ${isDark ? 'bg-[#151525] border-secondary' : 'bg-gray-100 border-gray-200'}`}>
+                    <nav className={`flex items-center gap-1 p-1 rounded-full border transition-colors ${isDark ? 'glass-card border-white/10' : 'bg-gray-100 border-gray-200'}`}>
                         <button className={`flex items-center justify-center size-9 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isDark ? 'text-slate-400 hover:text-white hover:bg-[#1e1e2d]' : 'text-gray-500 hover:text-gray-900 hover:bg-white border-transparent'}`}>
                             <span className="material-symbols-outlined text-[18px]">chevron_left</span>
                         </button>

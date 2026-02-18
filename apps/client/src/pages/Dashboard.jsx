@@ -4,6 +4,7 @@ import Toolbar from '../components/Toolbar';
 import TrackerTable from '../components/TrackerTable';
 import CreateTrackerModal from '../components/CreateTrackerModal';
 import { useTheme } from '../context/ThemeContext';
+import { supabase } from '../lib/supabaseClient';
 
 export default function Dashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -17,11 +18,13 @@ export default function Dashboard() {
 
     const fetchTrackers = async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/trackers');
-            if (response.ok) {
-                const data = await response.json();
-                setTrackers(data);
-            }
+            const { data, error } = await supabase
+                .from('tracker')
+                .select('*')
+                .order('createdAt', { ascending: false });
+
+            if (error) throw error;
+            setTrackers(data || []);
         } catch (error) {
             console.error('Failed to fetch trackers:', error);
         }
@@ -29,10 +32,12 @@ export default function Dashboard() {
 
     const handleDelete = async (id) => {
         try {
-            const response = await fetch(`http://localhost:3000/api/trackers/${id}`, {
-                method: 'DELETE'
-            });
-            if (response.ok) {
+            const { error } = await supabase
+                .from('tracker')
+                .delete()
+                .eq('id', id);
+
+            if (!error) {
                 fetchTrackers(); // Refresh list
             } else {
                 alert('Failed to delete tracker');

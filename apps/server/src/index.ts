@@ -17,18 +17,30 @@ import postbackRoutes from './routes/postbackRoutes';
 import reportRoutes from './routes/reportRoutes';
 import addonDomainRoutes from './routes/addonDomainRoutes';
 import uploadRoutes from './routes/uploadRoutes';
+import authRoutes from './routes/authRoutes';
 
 const app = express();
 const server = http.createServer(app);
 const prisma = new PrismaClient();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({
+    origin: '*', // Allow all origins for easier debugging
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Serve static assets from public folder (Client Build)
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Serve Video Files (Alias for development/production)
+app.use('/videos', express.static(path.join(__dirname, '../../client/public/videos')));
+
+app.use('/api/auth', authRoutes);
 app.use('/api/trackers', trackerRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/links', linkRoutes);
@@ -37,11 +49,19 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/addon-domains', addonDomainRoutes);
 app.use('/api/upload', uploadRoutes);
 
-// Register redirect routes LAST as it handles catch-all /:slug
+// Register redirect routes (Handles /:slug)
+// If slug not found, it calls next()
 app.use('/', redirectRoutes);
 
-app.get('/', (req, res) => {
-    res.send('Backend is running!');
+// SPA Fallback: Serve index.html for any other route
+app.get(/.*/, (req, res) => {
+    // Check if we have a built frontend
+    const indexHtml = path.join(__dirname, '../public/index.html');
+    res.sendFile(indexHtml, (err) => {
+        if (err) {
+            res.status(404).send('Backend is running! Frontend not found. Please build the client and copy dist to server/public.');
+        }
+    });
 });
 
 // Initialize WebSocket for live traffic

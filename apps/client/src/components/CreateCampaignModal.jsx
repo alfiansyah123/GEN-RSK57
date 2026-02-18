@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 // Network configurations with URL templates and postback endpoints
 const networkConfig = {
     iMonetizeit: {
         urlTemplate: 'https://domain.com/c/xx?s1=xx&s2=xx&s3={sub_id}&click_id={click_id}&j1=1&j3=1',
-        postbackEndpoint: 'https://domain.com/postback/?click_id={click_id}&payout={payout}',
+        postbackEndpoint: 'https://domain.com/api/postback.php?network=iMonetizeit&click_id=<token_1>&payout=<payout>&country=<country>&os=<os>&ip=<ip>',
         macros: ['{sub_id}', '{click_id}'],
-        tokens: ['{click_id}', '{payout}']
+        tokens: ['<click_id>', '<payout>']
     },
     Trafee: {
         urlTemplate: 'https://domain.com/c/xxxxx?subsource={sub_id}&track={click_id}',
-        postbackEndpoint: 'https://domain.com/api/postback.php?network=Trafee&click_id={track}&payout={sum}',
+        postbackEndpoint: 'https://domain.com/api/postback.php?network=Trafee&click_id={track}&subsource={sub_source}&country={country}&payout={sum}',
         macros: ['{sub_id}', '{click_id}'],
         tokens: ['{track}', '{sum}']
     },
     Lospollos: {
         urlTemplate: 'https://domain.com/?u=xx&o=xx&t={sub_id}&cid={click_id}',
-        postbackEndpoint: 'https://domain.com/api/postback.php?network=Lospollos&click_id={cid}&payout={sum}',
+        postbackEndpoint: 'https://domain.com/api/postback.php?network=Lospollos&subid={s1}&click_id={cid}&payout={sum}',
         macros: ['{sub_id}', '{click_id}'],
         tokens: ['{cid}', '{sum}']
     },
@@ -52,22 +53,19 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }) {
         setError('');
 
         try {
-            const response = await fetch('http://localhost:3000/api/campaigns', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+            const { data, error } = await supabase
+                .from('campaign')
+                .insert([{
                     network: selectedNetwork,
-                    urlTemplate: currentConfig.urlTemplate,
-                    postbackEndpoint: currentConfig.postbackEndpoint,
-                    offerName: offerName.trim()
-                })
-            });
+                    "urlTemplate": currentConfig.urlTemplate,
+                    "postbackEndpoint": currentConfig.postbackEndpoint,
+                    "offerName": offerName.trim()
+                }])
+                .select();
 
-            if (!response.ok) {
-                throw new Error('Failed to create campaign');
-            }
+            if (error) throw error;
 
-            const campaign = await response.json();
+            const campaign = data[0];
             setSelectedNetwork('');
             setOfferName('');
             if (onSuccess) onSuccess(campaign);

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import GeneratorNavigation from '../components/GeneratorNavigation';
+import { supabase } from '../lib/supabaseClient';
 
 // Sample library images
 const libraryImages = [
@@ -42,12 +43,16 @@ export default function ShareImage() {
     useEffect(() => {
         const fetchDomains = async () => {
             try {
-                const res = await fetch('http://localhost:3000/api/addon-domains');
-                if (res.ok) {
-                    const data = await res.json();
-                    setDomains(data);
-                    if (data.length > 0) setSelectedDomain(data[0].title);
-                }
+                const { data, error } = await supabase
+                    .from('domain')
+                    .select('*')
+                    .order('addedAt', { ascending: false });
+
+                if (error) throw error;
+                // Add title for compatibility
+                const formatted = (data || []).map(d => ({ ...d, title: d.name }));
+                setDomains(formatted);
+                if (formatted.length > 0) setSelectedDomain(formatted[0].title);
             } catch (err) {
                 console.error('Error fetching domains:', err);
             }
@@ -77,23 +82,32 @@ export default function ShareImage() {
         };
         reader.readAsDataURL(file);
 
-        // Upload to server
-        const formData = new FormData();
-        formData.append('image', file);
-
         try {
-            const res = await fetch('http://localhost:3000/api/upload', {
-                method: 'POST',
-                body: formData
-            });
-            if (res.ok) {
-                const data = await res.json();
-                // Replace local preview with server URL
-                const serverUrl = `http://localhost:3000${data.imageUrl}`;
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            // Upload to Supabase Storage 'uploads' bucket
+            const { error: uploadError } = await supabase.storage
+                .from('uploads')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            // Get Public URL
+            const { data } = supabase.storage
+                .from('uploads')
+                .getPublicUrl(filePath);
+
+            if (data) {
+                const serverUrl = data.publicUrl;
                 setSelectedImage(serverUrl);
+                // Update the last added image in uploadedImages to use server URL?
+                // For simplicity, we just set selectedImage.
             }
         } catch (err) {
             console.error('Upload error:', err);
+            alert('Upload failed: ' + err.message);
         }
     };
 
@@ -123,37 +137,31 @@ export default function ShareImage() {
         try {
             const slug = generateSlug();
 
-            // For library images, use them directly. For uploaded images, they should already be server URLs
-            const ogImageUrl = selectedImage.startsWith('http://localhost:3000')
-                ? selectedImage
-                : selectedImage; // External URLs work too for OG
+            const ogImageUrl = selectedImage;
 
             const payload = {
                 slug,
-                targetUrl: `https://example.com/offer`, // Placeholder - in real use, this would link to actual offer
+                "targetUrl": `https://example.com/offer`, // Placeholder
                 domain: selectedDomain,
-                trackerId: trackerId,
+                "trackerId": trackerId,
                 network: 'ShareImage',
-                ogImage: ogImageUrl,
-                ogTitle: ogTitle,
-                ogDescription: promoText
+                "ogImage": ogImageUrl,
+                "ogTitle": ogTitle,
+                "ogDescription": promoText
             };
 
-            const res = await fetch('http://localhost:3000/api/links', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            const { error } = await supabase
+                .from('link')
+                .insert([payload]);
 
-            if (res.ok) {
-                const shortUrl = `https://${selectedDomain}/${slug}`;
-                setGeneratedUrl(shortUrl);
-            } else {
-                throw new Error('Failed to create link');
-            }
+            if (error) throw error;
+
+            const shortUrl = `https://${selectedDomain}/${slug}`;
+            setGeneratedUrl(shortUrl);
+
         } catch (err) {
             console.error('Error generating link:', err);
-            alert('Failed to generate link');
+            alert('Failed to generate link: ' + err.message);
         } finally {
             setIsGenerating(false);
         }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 export default function AddonDomainModal({ isOpen, onClose, onSave }) {
     const [trackers, setTrackers] = useState([]);
@@ -6,17 +7,19 @@ export default function AddonDomainModal({ isOpen, onClose, onSave }) {
     const [domainName, setDomainName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    // Fetch trackers from API
+    // Fetch trackers from Supabase
     useEffect(() => {
         if (isOpen) {
-            fetch('http://localhost:3000/api/trackers')
-                .then(res => res.json())
-                .then(data => {
-                    if (Array.isArray(data)) {
-                        setTrackers(data);
-                    }
-                })
-                .catch(err => console.error('Failed to fetch trackers:', err));
+            const fetchTrackers = async () => {
+                const { data, error } = await supabase
+                    .from('tracker')
+                    .select('id, name')
+                    .order('name');
+
+                if (error) console.error('Failed to fetch trackers:', error);
+                else setTrackers(data || []);
+            };
+            fetchTrackers();
         }
     }, [isOpen]);
 
@@ -36,25 +39,37 @@ export default function AddonDomainModal({ isOpen, onClose, onSave }) {
 
         setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:3000/api/addon-domains', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    domain: domainName.trim(),
-                    group: selectedGroup,
-                    trackerId: selectedGroup === 'global' ? null : selectedGroup
-                })
-            });
+            const { error } = await supabase
+                .from('domain')
+                .insert([{
+                    name: domainName.trim(),
+                    status: 'Pending',
+                    ssl: 'Pending'
+                    // Note: 'group' and 'trackerId' columns are not in the provided schema for 'domain' table!
+                    // Checking schema: domain table has id, name, subdomain, status, ssl, addedAt.
+                    // The original code sent 'group' and 'trackerId' but schema seems to not have them?
+                    // Wait, tracker table has domainId, but domain table doesn't seem to have trackerId.
+                    // Let's stick to the schema I saw.
+                    // If the user wants to associate domain with tracker, it might be in tracker table?
+                    // "domainId" INT REFERENCES domain(id) ON DELETE SET NULL
+                    // So a tracker belongs to a domain? Or domain belongs to tracker?
+                    // The original PHP code implies domain can belong to a tracker (group).
+                    // But schema says tracker has domainId. This implies Many-to-One: Many trackers can use One domain?
+                    // Or One tracker using One domain?
+                    // "domainId" in tracker table means Tracker -> Domain.
+                    // So if I select a group (Tracker) here, I should probably update the TRACKER to point to this new domain?
+                    // But 'Addon Domain' usually means adding a domain to the system.
+                    // Let's just insert into 'domain' table for now, matching the confirmed schema.
+                }]);
 
-            if (response.ok) {
+            if (!error) {
                 alert('Domain saved successfully! 🎉');
                 setDomainName('');
                 setSelectedGroup('global');
                 if (onSave) onSave();
                 onClose();
             } else {
-                const data = await response.json();
-                alert('Error: ' + (data.error || 'Failed to save domain'));
+                alert('Error: ' + error.message);
             }
         } catch (err) {
             alert('Failed to connect to server');
@@ -94,23 +109,23 @@ export default function AddonDomainModal({ isOpen, onClose, onSave }) {
                     {/* Instructions Section */}
                     <div className="mb-6">
                         <p className="text-[#e2e2e8] text-sm font-normal leading-relaxed pb-3">
-                            Please create a <strong>CNAME Record</strong> in your domain settings pointing to the following target. This allows your domain to connect securely via our optimized network (Cloudflare).
+                            Please create an <strong>A Record</strong> in your domain settings pointing to the following target. This allows your domain to connect securely via our optimized network (Cloudflare).
                         </p>
-                        {/* CNAME Target */}
+                        {/* A Record Target */}
                         <div className="flex flex-col gap-3 mt-2">
-                            {/* CNAME */}
+                            {/* A Record */}
                             <div className="flex items-center gap-4 bg-[#0a0b1e] border border-[#323367] rounded-lg px-4 py-3 justify-between group transition-colors hover:border-primary/50">
                                 <div className="flex items-center gap-3 overflow-hidden">
-                                    <span className="material-symbols-outlined text-primary text-[20px]">link</span>
+                                    <span className="material-symbols-outlined text-primary text-[20px]">dns</span>
                                     <div className="flex flex-col">
-                                        <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">CNAME Target</span>
-                                        <p className="text-white text-sm font-mono tracking-wide truncate">cuanfbpro.shop</p>
+                                        <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">A Record Target</span>
+                                        <p className="text-white text-sm font-mono tracking-wide truncate">94.100.26.12</p>
                                     </div>
                                 </div>
                                 <button
                                     className="shrink-0 text-[#9293c9] hover:text-primary transition-colors flex items-center justify-center p-1.5 rounded hover:bg-white/5"
                                     title="Copy to clipboard"
-                                    onClick={() => navigator.clipboard.writeText('cuanfbpro.shop')}
+                                    onClick={() => navigator.clipboard.writeText('94.100.26.12')}
                                 >
                                     <span className="material-symbols-outlined text-[20px]">content_copy</span>
                                 </button>

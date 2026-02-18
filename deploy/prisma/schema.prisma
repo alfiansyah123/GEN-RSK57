@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String   // Will be hashed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Domain {
+  id        Int      @id @default(autoincrement())
+  name      String
+  subdomain String?
+  status    String   @default("Pending")
+  ssl       String   @default("Pending")
+  addedAt   DateTime @default(now())
+  trackers  Tracker[]
+}
+
+model Tracker {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  team      String
+  password  String?
+  targetUrl String
+  domainId  Int?
+  domain    Domain?  @relation(fields: [domainId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Campaign {
+  id              Int      @id @default(autoincrement())
+  network         String
+  urlTemplate     String   @db.Text
+  postbackEndpoint String  @db.Text
+  offerName       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Link {
+  id            Int          @id @default(autoincrement())
+  slug          String       @unique
+  targetUrl     String       @db.Text
+  domain        String
+  trackerId     String
+  network       String?
+  useLandingPage Boolean     @default(false)
+  ogImage       String?      @db.Text
+  ogTitle       String?
+  ogDescription String?      @db.Text
+  clickCount    Int          @default(0)
+  clicks        Click[]
+  conversions   Conversion[]
+  createdAt     DateTime     @default(now())
+}
+
+model Click {
+  id        Int      @id @default(autoincrement())
+  linkId    Int
+  link      Link     @relation(fields: [linkId], references: [id])
+  ip        String
+  country   String
+  userAgent String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([linkId])
+  @@index([createdAt])
+}
+
+model Conversion {
+  id        Int      @id @default(autoincrement())
+  linkId    Int
+  link      Link     @relation(fields: [linkId], references: [id])
+  clickId   String
+  payout    Float    @default(0.0)
+  createdAt DateTime @default(now())
+
+  @@index([linkId])
+  @@index([createdAt])
+}

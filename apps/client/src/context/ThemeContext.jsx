@@ -5,6 +5,7 @@ const ThemeContext = createContext();
 export function ThemeProvider({ children }) {
     const [isDark, setIsDark] = useState(() => {
         const saved = localStorage.getItem('theme');
+        // Default to TRUE (dark) if nothing saved, or if saved is 'dark'
         return saved ? saved === 'dark' : true;
     });
 
@@ -14,7 +15,7 @@ export function ThemeProvider({ children }) {
         } else {
             document.documentElement.classList.remove('dark');
         }
-        
+
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
     }, [isDark]);
 

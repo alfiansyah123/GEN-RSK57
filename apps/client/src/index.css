@@ -3,18 +3,25 @@
 @theme {
   --font-display: "Inter", "sans-serif";
 
-  --color-primary: #6467f2;
-  --color-secondary: #232448;
-  --color-text-muted: #9293c9;
-  --color-background-light: #f6f6f8;
-  --color-background-dark: #111122;
-  --color-surface-dark: #16172b;
+  /* Green / Black Theme */
+  --color-primary: #10b981;
+  /* Emerald 500 */
+  --color-secondary: #064e3b;
+  /* Emerald 900 */
+  --color-text-muted: #6ee7b7;
+  /* Emerald 300 */
+  --color-background-light: #f0fdf4;
+  --color-background-dark: #000000;
+  /* Pure Black or #020617 */
+  --color-surface-dark: #0f172a;
+  /* Slate 900 */
   --color-surface-light: #ffffff;
-  --color-input-dark: #232448;
-  --color-border-dark: #2a2a3c;
+  --color-input-dark: #0f172a;
+  --color-border-dark: #1e293b;
   --color-border-light: #e5e7eb;
-  --color-primary-hover: #4f52d1;
-  --color-surface-border: #323367;
+  --color-primary-hover: #059669;
+  /* Emerald 600 */
+  --color-surface-border: #1e293b;
 }
 
 @layer base {
@@ -29,6 +36,7 @@
   0% {
     filter: hue-rotate(0deg);
   }
+
   100% {
     filter: hue-rotate(360deg);
   }
@@ -36,4 +44,52 @@
 
 .animate-rgb {
   animation: rgb-rotate 3s linear infinite;
+}
+
+/* Blob Animation */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+.animation-delay-6000 {
+  animation-delay: 6s;
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  @apply bg-white/5 backdrop-blur-xl border border-white/20 shadow-2xl ring-1 ring-white/10;
+}
+
+.glass-card {
+  @apply bg-surface-dark/30 backdrop-blur-lg border border-white/15 hover:border-white/25 hover:bg-white/10 transition-all duration-300 shadow-lg;
+}
+
+.glass-input {
+  @apply bg-secondary/30 backdrop-blur-md border-white/20 focus:border-primary/50 focus:ring-primary/20 hover:border-white/30 transition-all;
 }

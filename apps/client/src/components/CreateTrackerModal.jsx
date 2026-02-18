@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 export default function CreateTrackerModal({ isOpen, onClose, trackerToEdit }) {
     if (!isOpen) return null;
@@ -30,25 +31,29 @@ export default function CreateTrackerModal({ isOpen, onClose, trackerToEdit }) {
             return;
         }
 
-        const url = trackerToEdit
-            ? `http://localhost:3000/api/trackers/${trackerToEdit.id}`
-            : 'http://localhost:3000/api/trackers';
-
-        const method = trackerToEdit ? 'PUT' : 'POST';
-
         try {
-            const response = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, team, password, slug })
-            });
+            let error;
 
-            if (response.ok) {
+            if (trackerToEdit) {
+                // Update
+                const { error: updateError } = await supabase
+                    .from('tracker')
+                    .update({ name, team, password, slug })
+                    .eq('id', trackerToEdit.id);
+                error = updateError;
+            } else {
+                // Create
+                const { error: insertError } = await supabase
+                    .from('tracker')
+                    .insert([{ name, team, password, slug }]);
+                error = insertError;
+            }
+
+            if (!error) {
                 alert(`Tracker ${trackerToEdit ? 'Updated' : 'Created'} Successfully! 🚀`);
                 onClose();
             } else {
-                const data = await response.json();
-                alert('Error: ' + data.error);
+                alert('Error: ' + error.message);
             }
         } catch (err) {
             alert('Failed to connect to server');
@@ -131,19 +136,19 @@ export default function CreateTrackerModal({ isOpen, onClose, trackerToEdit }) {
                         </div>
                     </div>
 
-                    {/* Generate URL Field (Read Only) */}
+                    {/* Generate URL Field (Read Only) - Only shown when password is entered */}
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium text-slate-200" htmlFor="url">Generate URL</label>
                         <div className="relative flex items-center rounded-xl bg-[#232448] shadow-sm transition-all group">
                             <input
-                                className="flex-1 border-none bg-transparent px-4 py-3.5 text-base text-slate-400 focus:ring-0 outline-none cursor-default"
+                                className={`flex-1 border-none bg-transparent px-4 py-3.5 text-base focus:ring-0 outline-none cursor-default ${password ? 'text-primary' : 'text-slate-500'}`}
                                 id="url"
                                 type="text"
                                 readOnly
-                                value={`http://localhost:5173/${name.trim().replace(/\s+/g, '-')}`}
+                                value={password ? `${window.location.origin}/${name.trim().replace(/\s+/g, '-')}` : 'Enter password first...'}
                             />
                             <div className="flex items-center justify-center px-4 text-slate-500">
-                                <span className="material-symbols-outlined text-[20px]">lock</span>
+                                <span className="material-symbols-outlined text-[20px]">{password ? 'lock_open' : 'lock'}</span>
                             </div>
                         </div>
                     </div>
