@@ -68,7 +68,15 @@ export default function Generator() {
         fetchData();
     }, []);
 
-    // ... (rest of filtering logic remains same)
+    // Auto-select campaign based on selected network
+    useEffect(() => {
+        if (campaigns.length > 0 && selectedNetwork) {
+            const matched = campaigns.find(c =>
+                c.network && c.network.toLowerCase() === selectedNetwork.toLowerCase()
+            );
+            setSelectedCampaign(matched || null);
+        }
+    }, [campaigns, selectedNetwork]);
 
     const handleGenerate = async () => {
         if (!selectedCampaign) {
