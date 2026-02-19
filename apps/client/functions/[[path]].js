@@ -9,31 +9,6 @@ const CRAWLER_PATTERNS = [
     'WhatsApp', 'TelegramBot', 'Pinterest', 'Googlebot', 'bingbot'
 ];
 
-const REALTIME_SUPABASE_URL = 'https://vtlwptockofzbllnsyrg.supabase.co';
-const REALTIME_SUPABASE_KEY = 'sb_publishable_0MWvjujUhXVBNq7P-30baA_Jqr1SYsm';
-
-async function supabaseTrafficInsert(table, data) {
-    const url = `${REALTIME_SUPABASE_URL}/rest/v1/${table}`;
-    try {
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'apikey': REALTIME_SUPABASE_KEY,
-                'Authorization': `Bearer ${REALTIME_SUPABASE_KEY}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=representation',
-            },
-            body: JSON.stringify(data),
-        });
-        const result = await res.json();
-        if (!res.ok) console.error(`Traffic Insert Error [${res.status}]:`, result);
-        return result;
-    } catch (e) {
-        console.error('Traffic Insert Fetch Exception:', e);
-        return null;
-    }
-}
-
 export async function onRequest(context) {
     const { request, env, next } = context;
     const url = new URL(request.url);
