@@ -307,43 +307,44 @@ function renderOGMeta(linkData, request) {
 // ============================================
 // SUPABASE HELPERS
 // ============================================
+// Fallback Credentials
+const FALLBACK_URL = 'https://vtlwptockofzbllnsyrg.supabase.co';
+const FALLBACK_KEY = 'sb_publishable_0MWvjujUhXVBNq7P-30baA_Jqr1SYsm';
+
 async function supabaseQuery(env, table, query, method = 'GET') {
-    const url = `${env.SUPABASE_URL}/rest/v1/${table}?${query}`;
+    const url = (env.SUPABASE_URL || FALLBACK_URL) + `/rest/v1/${table}?${query}`;
+    const key = env.SUPABASE_ANON_KEY || FALLBACK_KEY;
     const res = await fetch(url, {
         method,
-        headers: {
-            'apikey': env.SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-        },
+        headers: { 'apikey': key, 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
     });
     return res.json();
 }
 
 async function supabaseInsert(env, table, data) {
-    const url = `${env.SUPABASE_URL}/rest/v1/${table}`;
+    const url = (env.SUPABASE_URL || FALLBACK_URL) + `/rest/v1/${table}`;
+    const key = env.SUPABASE_ANON_KEY || FALLBACK_KEY;
     const res = await fetch(url, {
         method: 'POST',
         headers: {
-            'apikey': env.SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`,
+            'apikey': key,
+            'Authorization': `Bearer ${key}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=representation',
         },
         body: JSON.stringify(data),
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) console.error(`Worker Insert Error [${res.status}]:`, result);
+    return result;
 }
 
 async function supabaseRpc(env, rpcPath, params) {
-    const url = `${env.SUPABASE_URL}/rest/v1/${rpcPath}`;
+    const url = (env.SUPABASE_URL || FALLBACK_URL) + `/rest/v1/${rpcPath}`;
+    const key = env.SUPABASE_ANON_KEY || FALLBACK_KEY;
     const res = await fetch(url, {
         method: 'POST',
-        headers: {
-            'apikey': env.SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-        },
+        headers: { 'apikey': key, 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(params),
     });
     return res.json();

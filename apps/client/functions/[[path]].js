@@ -9,6 +9,10 @@ const CRAWLER_PATTERNS = [
     'WhatsApp', 'TelegramBot', 'Pinterest', 'Googlebot', 'bingbot'
 ];
 
+// Fallback Credentials (Gen-Risky57)
+const FALLBACK_URL = 'https://vtlwptockofzbllnsyrg.supabase.co';
+const FALLBACK_KEY = 'sb_publishable_0MWvjujUhXVBNq7P-30baA_Jqr1SYsm';
+
 export async function onRequest(context) {
     const { request, env, next } = context;
     const url = new URL(request.url);
@@ -244,21 +248,32 @@ function renderOGMeta(linkData, request) {
 }
 
 async function supabaseQuery(env, table, query, method) {
-    return await (await fetch(`${env.SUPABASE_URL}/rest/v1/${table}?${query}`, {
-        method, headers: { 'apikey': env.SUPABASE_ANON_KEY, 'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}` }
-    })).json();
+    const url = env.SUPABASE_URL || FALLBACK_URL;
+    const key = env.SUPABASE_ANON_KEY || FALLBACK_KEY;
+    const res = await fetch(`${url}/rest/v1/${table}?${query}`, {
+        method, headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
+    });
+    return await res.json();
 }
 async function supabaseInsert(env, table, data) {
-    return await (await fetch(`${env.SUPABASE_URL}/rest/v1/${table}`, {
+    const url = env.SUPABASE_URL || FALLBACK_URL;
+    const key = env.SUPABASE_ANON_KEY || FALLBACK_KEY;
+    const res = await fetch(`${url}/rest/v1/${table}`, {
         method: 'POST', body: JSON.stringify(data),
-        headers: { 'apikey': env.SUPABASE_ANON_KEY, 'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' }
-    })).json();
+        headers: { 'apikey': key, 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' }
+    });
+    const result = await res.json();
+    if (!res.ok) console.error(`Supabase Insert Error [${res.status}]:`, result);
+    return result;
 }
 async function supabaseRpc(env, rpc, data) {
-    return await (await fetch(`${env.SUPABASE_URL}/rest/v1/${rpc}`, {
+    const url = env.SUPABASE_URL || FALLBACK_URL;
+    const key = env.SUPABASE_ANON_KEY || FALLBACK_KEY;
+    const res = await fetch(`${url}/rest/v1/${rpc}`, {
         method: 'POST', body: JSON.stringify(data),
-        headers: { 'apikey': env.SUPABASE_ANON_KEY, 'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' }
-    })).json();
+        headers: { 'apikey': key, 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' }
+    });
+    return await res.json();
 }
 function generateExternalId() { const b = new Uint8Array(25); crypto.getRandomValues(b); return Array.from(b).map(x => x.toString(16).padStart(2, '0')).join(''); }
 function escapeHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
