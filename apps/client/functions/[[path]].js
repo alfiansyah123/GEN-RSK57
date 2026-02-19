@@ -79,6 +79,7 @@ export async function onRequest(context) {
         // IP & Country
         const clientIp = request.headers.get('cf-connecting-ip') || '0.0.0.0';
         const country = (request.cf && request.cf.country) ? request.cf.country.toUpperCase() : 'XX';
+        const referrer = request.headers.get('referer') || '';
 
         // Country Blocking
         if (country === 'ID') {
@@ -97,6 +98,7 @@ export async function onRequest(context) {
                 country: country,
                 userAgent: userAgent.substring(0, 500),
                 external_id: externalId,
+                referrer: referrer.substring(0, 500),
             });
             if (clickResult && clickResult.length > 0) {
                 dbClickId = clickResult[0].id;

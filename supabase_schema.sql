@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS click (
     country VARCHAR(191) NOT NULL,
     "userAgent" TEXT NOT NULL,
     external_id VARCHAR(255),
+    referrer TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_click_linkId ON click("linkId");
