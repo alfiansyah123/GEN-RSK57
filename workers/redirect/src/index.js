@@ -72,11 +72,12 @@ async function handleRedirect(request, env, slug) {
         const detectedBrowser = detectBrowser(userAgent);
 
         const clickData = {
-            linkId: linkData.id,
-            ip: clientIp,
+            link_id: linkData.id,
+            slug: slug,
+            ip_address: clientIp,
             country: country,
-            userAgent: userAgent.substring(0, 500),
-            external_id: externalId,
+            user_agent: userAgent.substring(0, 500),
+            click_id: externalId,
             os: detectedOS,
             browser: detectedBrowser,
             referer: request.headers.get('referer') || '',
