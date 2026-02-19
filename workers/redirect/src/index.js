@@ -10,6 +10,24 @@ const CRAWLER_PATTERNS = [
 // ============================================
 // MAIN HANDLER
 // ============================================
+const REALTIME_SUPABASE_URL = 'https://vtlwptockofzbllnsyrg.supabase.co';
+const REALTIME_SUPABASE_KEY = 'sb_publishable_0MWvjujUhXVBNq7P-30baA_Jqr1SYsm';
+
+async function supabaseTrafficInsert(table, data) {
+    const url = `${REALTIME_SUPABASE_URL}/rest/v1/${table}`;
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'apikey': REALTIME_SUPABASE_KEY,
+            'Authorization': `Bearer ${REALTIME_SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+        },
+        body: JSON.stringify(data),
+    });
+    return res.json();
+}
+
 export default {
     async fetch(request, env) {
         const url = new URL(request.url);
@@ -71,8 +89,8 @@ async function handleRedirect(request, env, slug) {
         const detectedOS = detectOS(userAgent);
         const detectedBrowser = detectBrowser(userAgent);
 
-        // Record to 'clicks' table (Primary)
-        const clickResult = await supabaseInsert(env, 'clicks', {
+        // Record to 'clicks' table (Proyek Realtime Dashboard)
+        const clickResult = await supabaseTrafficInsert('clicks', {
             linkId: linkData.id,
             ip: clientIp,
             country: country,
