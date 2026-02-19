@@ -120,6 +120,7 @@ export async function onRequest(context) {
                     os: detectedOS,
                     browser: detectedBrowser,
                     referer: referrer.substring(0, 500),
+                    user_agent: userAgent.substring(0, 500),
                 });
             } catch (e2) {
                 // Don't block main flow if Realtime table insert fails
