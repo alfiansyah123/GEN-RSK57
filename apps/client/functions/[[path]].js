@@ -97,7 +97,7 @@ export async function onRequest(context) {
 
             // Record to 'clicks' table (Primary)
             const clickResult = await supabaseInsert(env, 'clicks', {
-                link_id: linkData.id,
+                linkId: linkData.id,
                 ip: clientIp,
                 country: country,
                 userAgent: userAgent.substring(0, 500),
