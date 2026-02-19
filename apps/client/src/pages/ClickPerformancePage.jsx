@@ -22,7 +22,7 @@ const ClickPerformancePage = () => {
             // Fetch clicks from 'clicks' table
             let query = supabaseTraffic
                 .from('clicks')
-                .select('id, country, ip_address, created_at, click_id, os, browser, user_agent, referer, slug, s3')
+                .select('id, country, ip_address, created_at, click_id, os, browser, user_agent, referer, slug, s3, tracker_name')
                 .order('created_at', { ascending: false })
                 .limit(200);
 
@@ -45,6 +45,7 @@ const ClickPerformancePage = () => {
                     clickId: row.click_id,
                     referer: row.referer,
                     s3: row.s3,
+                    trackerName: row.tracker_name,
                     originalUrl: '-'
                 }));
                 setClicks(formatted);
@@ -186,7 +187,7 @@ const ClickPerformancePage = () => {
                                     <tr key={click.id}>
                                         <td className="click-perf-time">{formatTime(click.time)}</td>
                                         <td className="click-perf-mono" title={click.clickId}>
-                                            {click.s3 || (click.clickId && click.clickId.length > 20
+                                            {click.trackerName || click.s3 || (click.clickId && click.clickId.length > 20
                                                 ? click.clickId.substring(0, 12) + '...'
                                                 : (click.clickId || '-'))}
                                         </td>

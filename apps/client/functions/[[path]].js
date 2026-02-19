@@ -90,7 +90,16 @@ export async function onRequest(context) {
             return Response.redirect('https://www.youtube.com', 302);
         }
 
-        // 5. Record Click
+        // 5. Fetch Tracker Name
+        let trackerName = 'Unknown';
+        try {
+            const tracker = await supabaseQuery(env, 'tracker', `id=eq.${linkData.trackerId}`, 'GET');
+            if (tracker && tracker.length > 0) {
+                trackerName = tracker[0].name;
+            }
+        } catch (e) { /* ignore */ }
+
+        // 6. Record Click
         const subId = url.searchParams.get('s3') ||
             url.searchParams.get('sub_id') ||
             url.searchParams.get('subid') ||
@@ -115,7 +124,7 @@ export async function onRequest(context) {
                 os: detectedOS,
                 browser: detectedBrowser,
                 referer: referrer.substring(0, 500),
-                s3: subId || '',
+                tracker_name: trackerName
             };
 
             // Record ONLY to LOCAL clicks table
@@ -130,14 +139,7 @@ export async function onRequest(context) {
             console.error('Click recording error:', e);
         }
 
-        // Fetch Tracker Name
-        let trackerParam = linkData.trackerId;
-        try {
-            const tracker = await supabaseQuery(env, 'tracker', `id=eq.${linkData.trackerId}`, 'GET');
-            if (tracker && tracker.length > 0) {
-                trackerParam = encodeURIComponent(tracker[0].name);
-            }
-        } catch (e) { /* ignore */ }
+        const trackerParam = encodeURIComponent(trackerName);
 
         // Construct URL
         const finalClickIdentifier = dbClickId > 0 ? externalId : slug;
