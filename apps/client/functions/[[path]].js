@@ -106,17 +106,6 @@ export async function onRequest(context) {
                 referer: referrer.substring(0, 500),
             };
 
-            const clickDataPayload = {
-                linkId: linkData.id,
-                ip: clientIp,
-                country: country,
-                userAgent: userAgent.substring(0, 500),
-                external_id: externalId,
-                os: detectedOS,
-                browser: detectedBrowser,
-                referer: referrer.substring(0, 500),
-            };
-
             // Record ONLY to LOCAL clicks table
             const clickResult = await supabaseInsert(env, 'clicks', clickDataPayload);
 
