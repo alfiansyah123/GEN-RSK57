@@ -22,12 +22,12 @@ const ClickPerformancePage = () => {
             // Fetch clicks from 'clicks' table
             let query = supabaseTraffic
                 .from('clicks')
-                .select('id, country, ip, createdAt, external_id, os, browser, userAgent, referer')
-                .order('createdAt', { ascending: false })
+                .select('id, country, ip_address, created_at, click_id, os, browser, user_agent, referer, slug')
+                .order('created_at', { ascending: false })
                 .limit(200);
 
             // Filter by date
-            query = query.gte('createdAt', startDate.toISOString());
+            query = query.gte('created_at', startDate.toISOString());
 
             let { data, error } = await query;
 
@@ -36,13 +36,13 @@ const ClickPerformancePage = () => {
             if (data) {
                 const formatted = data.map(row => ({
                     id: row.id,
-                    slug: '-',
+                    slug: row.slug || '-',
                     country: row.country,
-                    ip: row.ip,
-                    time: row.createdAt,
+                    ip: row.ip_address,
+                    time: row.created_at,
                     os: row.os || 'Unknown',
-                    browser: row.browser || parseUserAgent(row.userAgent),
-                    clickId: row.external_id,
+                    browser: row.browser || parseUserAgent(row.user_agent),
+                    clickId: row.click_id,
                     referer: row.referer,
                     originalUrl: '-'
                 }));
