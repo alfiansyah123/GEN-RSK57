@@ -171,7 +171,7 @@ const ClickPerformancePage = () => {
                             <thead>
                                 <tr>
                                     <th>Time</th>
-                                    <th>Click ID</th>
+                                    <th>SUB ID</th>
                                     <th>Referrer</th>
                                     <th>Country</th>
                                     <th>OS</th>
@@ -184,7 +184,7 @@ const ClickPerformancePage = () => {
                                 {clicks.map((click) => (
                                     <tr key={click.id}>
                                         <td className="click-perf-time">{formatTime(click.time)}</td>
-                                        <td className="click-perf-mono">{click.clickId || '-'}</td>
+                                        <td className="click-perf-mono">{click.slug || '-'}</td>
                                         <td className="click-perf-referrer" title={click.referer}>
                                             {click.referer ? (() => {
                                                 try {

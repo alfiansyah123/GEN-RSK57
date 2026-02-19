@@ -21,7 +21,7 @@ export default function LiveTraffic() {
                     id: item.id,
                     country: item.country,
                     countryCode: item.country || 'Unknown',
-                    name: item.slug || item.link_id || 'Unknown',
+                    name: item.slug || 'Unknown', // Use slug as SUB ID
                     network: 'LIVE',
                     flag: (item.country && item.country.toLowerCase() !== 'xx')
                         ? `https://flagcdn.com/w20/${item.country.toLowerCase()}.png`
@@ -47,7 +47,7 @@ export default function LiveTraffic() {
                     id: newItem.id,
                     country: newItem.country,
                     countryCode: newItem.country || 'Unknown',
-                    name: newItem.slug || newItem.link_id || 'Unknown',
+                    name: newItem.slug || 'Unknown', // Use slug as SUB ID
                     network: 'LIVE',
                     flag: (newItem.country && newItem.country.toLowerCase() !== 'xx')
                         ? `https://flagcdn.com/w20/${newItem.country.toLowerCase()}.png`
