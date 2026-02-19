@@ -12,6 +12,7 @@ import Login from './pages/Login';
 import GeoRedirect from './pages/GeoRedirect';
 import GeneratorAddonDomain from './pages/GeneratorAddonDomain';
 import ChangePassword from './pages/ChangePassword';
+import ClickPerformancePage from './pages/ClickPerformancePage';
 import TrackerAuthGuard from './components/TrackerAuthGuard';
 import Background from './components/Background';
 
@@ -46,6 +47,7 @@ function AppContent() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/campaigns" element={<Campaigns />} />
               <Route path="/addon-domains" element={<AddonDomains />} />
+              <Route path="/reports" element={<ClickPerformancePage />} />
               <Route path="/gantipw" element={<ChangePassword />} />
             </Route>
 

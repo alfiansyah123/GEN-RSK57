@@ -42,6 +42,12 @@ export default function Header() {
                         >
                             Addon Domain
                         </NavLink>
+                        <NavLink
+                            to="/reports"
+                            className={({ isActive }) => `px-4 py-2 rounded-full text-sm font-medium transition-colors ${isActive ? 'text-white bg-primary shadow-lg shadow-primary/25' : isDark ? 'text-[#9293c9] hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'}`}
+                        >
+                            Reports
+                        </NavLink>
                     </div>
                 </nav>
                 <div className="flex items-center justify-end gap-6 flex-1 md:flex-none">

@@ -1,0 +1,116 @@
+.click-perf-header {
+    margin-bottom: 1.5rem;
+}
+
+.click-perf-header h2 {
+    font-size: 1.875rem;
+    font-weight: 900;
+    letter-spacing: -0.025em;
+}
+
+.click-perf-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.click-perf-stat-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.click-perf-stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.click-perf-stat-label {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.click-perf-table-wrap {
+    overflow-x: auto;
+}
+
+.click-perf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.click-perf-table th {
+    text-align: left;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
+
+.click-perf-table td {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.click-perf-time {
+    white-space: nowrap;
+    color: #cbd5e1;
+}
+
+.click-perf-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.click-perf-url {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-primary);
+}
+
+.click-perf-referrer {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.click-perf-flex {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.click-perf-loading, .click-perf-empty {
+    padding: 4rem;
+    text-align: center;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* Scrollbar styling */
+.click-perf-table-wrap::-webkit-scrollbar {
+    height: 6px;
+}
+.click-perf-table-wrap::-webkit-scrollbar-track {
+    background: transparent;
+}
+.click-perf-table-wrap::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
