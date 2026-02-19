@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { supabaseTraffic } from '../../utils/supabaseTraffic';
+import { supabaseTraffic } from '../utils/supabaseTraffic';
 
 const LiveTraffic = () => {
     const [clicks, setClicks] = useState([]);
