@@ -1,44 +1,67 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { supabaseTraffic } from '../utils/supabaseTraffic';
 
 const MAX_ITEMS = 5;
 
 export default function LiveTraffic() {
     const [traffic, setTraffic] = useState([]);
+    const subscriptionRef = useRef(null);
 
-    // Polling Logic (PHP Backend)
+    const fetchInitialTraffic = async () => {
+        try {
+            const { data, error } = await supabaseTraffic
+                .from('clicks')
+                .select('id, country, link_id, slug, created_at')
+                .order('created_at', { ascending: false })
+                .limit(MAX_ITEMS);
+
+            if (error) throw error;
+            if (data) {
+                const formatted = data.map(item => ({
+                    id: item.id,
+                    country: item.country,
+                    countryCode: item.country || 'Unknown',
+                    name: item.slug || item.link_id || 'Unknown',
+                    network: 'LIVE',
+                    flag: (item.country && item.country.toLowerCase() !== 'xx')
+                        ? `https://flagcdn.com/w20/${item.country.toLowerCase()}.png`
+                        : 'https://flagcdn.com/w20/un.png'
+                }));
+                setTraffic(formatted);
+            }
+        } catch (error) {
+            console.error('Initial Traffic Fetch Error:', error);
+        }
+    };
+
     useEffect(() => {
-        const fetchTraffic = async () => {
-            try {
-                // Fetch dari API PHP yang baru dibuat
-                const response = await fetch('https://ccpxengine.shop/api/live_traffic.php');
-                if (response.ok) {
-                    const json = await response.json();
-                    if (json && json.data) {
-                        const newItems = json.data.map(item => ({
-                            id: item.id,
-                            country: item.country,
-                            countryCode: item.country || 'Unknown',
-                            name: item.trackerId || 'Unknown',
-                            network: item.network || 'Unknown', // Ambil Network dari API
-                            flag: (item.country && item.country.toLowerCase() !== 'xx')
-                                ? `https://flagcdn.com/w20/${item.country.toLowerCase()}.png`
-                                : 'https://flagcdn.com/w20/un.png'
-                        }));
-                        setTraffic(newItems.slice(0, MAX_ITEMS));
-                    }
-                }
-            } catch (error) {
-                console.error('Live Traffic Fetch Error:', error);
+        // Initial Fetch
+        fetchInitialTraffic();
+
+        // Realtime Subscription
+        subscriptionRef.current = supabaseTraffic
+            .channel('public:clicks')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clicks' }, payload => {
+                const newItem = payload.new;
+                const formatted = {
+                    id: newItem.id,
+                    country: newItem.country,
+                    countryCode: newItem.country || 'Unknown',
+                    name: newItem.slug || newItem.link_id || 'Unknown',
+                    network: 'LIVE',
+                    flag: (newItem.country && newItem.country.toLowerCase() !== 'xx')
+                        ? `https://flagcdn.com/w20/${newItem.country.toLowerCase()}.png`
+                        : 'https://flagcdn.com/w20/un.png'
+                };
+                setTraffic(prev => [formatted, ...prev.slice(0, MAX_ITEMS - 1)]);
+            })
+            .subscribe();
+
+        return () => {
+            if (subscriptionRef.current) {
+                supabaseTraffic.removeChannel(subscriptionRef.current);
             }
         };
-
-        // Jalan pertama kali
-        fetchTraffic();
-
-        // Ulangi setiap 3 detik
-        const interval = setInterval(fetchTraffic, 3000);
-
-        return () => clearInterval(interval);
     }, []);
 
     return (

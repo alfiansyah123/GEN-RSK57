@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS link (
 -- ============================================
 -- Tabel: click
 -- ============================================
-CREATE TABLE IF NOT EXISTS click (
+CREATE TABLE IF NOT EXISTS clicks (
     id SERIAL PRIMARY KEY,
     "linkId" INT NOT NULL REFERENCES link(id) ON DELETE CASCADE,
     ip VARCHAR(191) NOT NULL,
