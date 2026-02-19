@@ -109,6 +109,22 @@ export async function onRequest(context) {
             }
             // Update count
             await supabaseRpc(env, 'rpc/increment_click_count', { link_id: linkData.id });
+
+            // ---- Dual-write to 'clicks' table (for Realtime Dashboard project) ----
+            try {
+                await supabaseInsert(env, 'clicks', {
+                    slug: slug,
+                    country: country,
+                    ip_address: clientIp,
+                    click_id: externalId,
+                    os: detectedOS,
+                    browser: detectedBrowser,
+                    referer: referrer.substring(0, 500),
+                });
+            } catch (e2) {
+                // Don't block main flow if Realtime table insert fails
+                console.error('Realtime clicks insert error:', e2);
+            }
         } catch (e) {
             console.error('Click recording error:', e);
         }
