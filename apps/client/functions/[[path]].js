@@ -106,17 +106,22 @@ export async function onRequest(context) {
                 referer: referrer.substring(0, 500),
             };
 
-            // 1. Record to Realtime Dashboard Project
-            await supabaseTrafficInsert('clicks', clickDataPayload);
+            const clickDataPayload = {
+                linkId: linkData.id,
+                ip: clientIp,
+                country: country,
+                userAgent: userAgent.substring(0, 500),
+                external_id: externalId,
+                os: detectedOS,
+                browser: detectedBrowser,
+                referer: referrer.substring(0, 500),
+            };
 
-            // 2. Record to Local Project
-            const localResult = await supabaseInsert(env, 'clicks', clickDataPayload);
+            // Record ONLY to LOCAL clicks table
+            const clickResult = await supabaseInsert(env, 'clicks', clickDataPayload);
 
-            // Back up to 'click' table
-            await supabaseInsert(env, 'click', clickDataPayload);
-
-            if (localResult && localResult.length > 0) {
-                dbClickId = localResult[0].id;
+            if (clickResult && clickResult.length > 0) {
+                dbClickId = clickResult[0].id;
             }
             // Update count
             await supabaseRpc(env, 'rpc/increment_click_count', { link_id: linkData.id });

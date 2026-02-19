@@ -82,17 +82,11 @@ async function handleRedirect(request, env, slug) {
             referer: request.headers.get('referer') || '',
         };
 
-        // 1. Record to Realtime Dashboard Project (Beda URL)
-        await supabaseTrafficInsert('clicks', clickData);
+        // Record ONLY to LOCAL clicks table
+        const clickResult = await supabaseInsert(env, 'clicks', clickData);
 
-        // 2. Record to Local Project (Url bawaan Worker) - JUST IN CASE
-        const localResult = await supabaseInsert(env, 'clicks', clickData);
-
-        // Coba juga ke tabel 'click' (singular) biar system lama tetep jalan sementara
-        await supabaseInsert(env, 'click', clickData);
-
-        if (localResult && localResult.length > 0) {
-            dbClickId = localResult[0].id;
+        if (clickResult && clickResult.length > 0) {
+            dbClickId = clickResult[0].id;
         }
 
         // Update click count
