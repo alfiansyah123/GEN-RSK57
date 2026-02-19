@@ -91,7 +91,8 @@ CREATE TABLE IF NOT EXISTS clicks (
     click_id TEXT,
     os TEXT,
     browser TEXT,
-    referer TEXT
+    referer TEXT,
+    s3 TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_clicks_link_id ON clicks(link_id);
 CREATE INDEX IF NOT EXISTS idx_clicks_created_at ON clicks(created_at);

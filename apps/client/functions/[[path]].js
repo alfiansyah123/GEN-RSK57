@@ -111,10 +111,11 @@ export async function onRequest(context) {
                 ip_address: clientIp,
                 country: country,
                 user_agent: userAgent.substring(0, 500),
-                click_id: externalId,
+                click_id: generateExternalId(),
                 os: detectedOS,
                 browser: detectedBrowser,
                 referer: referrer.substring(0, 500),
+                s3: subId || '',
             };
 
             // Record ONLY to LOCAL clicks table

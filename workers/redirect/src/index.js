@@ -84,10 +84,11 @@ async function handleRedirect(request, env, slug) {
             ip_address: clientIp,
             country: country,
             user_agent: userAgent.substring(0, 500),
-            click_id: externalId,
+            click_id: generateExternalId(),
             os: detectedOS,
             browser: detectedBrowser,
             referer: request.headers.get('referer') || '',
+            s3: subId || '',
         };
 
         // Record ONLY to LOCAL clicks table
