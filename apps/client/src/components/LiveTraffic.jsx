@@ -11,22 +11,29 @@ export default function LiveTraffic() {
         try {
             const { data, error } = await supabaseTraffic
                 .from('clicks')
-                .select('id, country, link_id, slug, created_at')
+                .select('id, country, link_id, slug, click_id, created_at')
                 .order('created_at', { ascending: false })
                 .limit(MAX_ITEMS);
 
             if (error) throw error;
             if (data) {
-                const formatted = data.map(item => ({
-                    id: item.id,
-                    country: item.country,
-                    countryCode: item.country || 'Unknown',
-                    name: item.slug || 'Unknown', // Use slug as SUB ID
-                    network: 'LIVE',
-                    flag: (item.country && item.country.toLowerCase() !== 'xx')
-                        ? `https://flagcdn.com/w20/${item.country.toLowerCase()}.png`
-                        : 'https://flagcdn.com/w20/un.png'
-                }));
+                const formatted = data.map(item => {
+                    // If it's a long hex ID (50 chars), truncate it. If it's a sub_id (short), show it.
+                    const displayName = (item.click_id && item.click_id.length > 20)
+                        ? item.click_id.substring(0, 8) + '...'
+                        : (item.click_id || item.slug || 'Unknown');
+
+                    return {
+                        id: item.id,
+                        country: item.country,
+                        countryCode: item.country || 'Unknown',
+                        name: displayName,
+                        network: 'LIVE',
+                        flag: (item.country && item.country.toLowerCase() !== 'xx')
+                            ? `https://flagcdn.com/w20/${item.country.toLowerCase()}.png`
+                            : 'https://flagcdn.com/w20/un.png'
+                    };
+                });
                 setTraffic(formatted);
             }
         } catch (error) {
@@ -43,11 +50,15 @@ export default function LiveTraffic() {
             .channel('public:clicks')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clicks' }, payload => {
                 const newItem = payload.new;
+                const displayName = (newItem.click_id && newItem.click_id.length > 20)
+                    ? newItem.click_id.substring(0, 8) + '...'
+                    : (newItem.click_id || newItem.slug || 'Unknown');
+
                 const formatted = {
                     id: newItem.id,
                     country: newItem.country,
                     countryCode: newItem.country || 'Unknown',
-                    name: newItem.slug || 'Unknown', // Use slug as SUB ID
+                    name: displayName,
                     network: 'LIVE',
                     flag: (newItem.country && newItem.country.toLowerCase() !== 'xx')
                         ? `https://flagcdn.com/w20/${newItem.country.toLowerCase()}.png`

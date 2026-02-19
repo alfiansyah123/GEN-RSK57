@@ -184,7 +184,11 @@ const ClickPerformancePage = () => {
                                 {clicks.map((click) => (
                                     <tr key={click.id}>
                                         <td className="click-perf-time">{formatTime(click.time)}</td>
-                                        <td className="click-perf-mono">{click.slug || '-'}</td>
+                                        <td className="click-perf-mono" title={click.clickId}>
+                                            {click.clickId && click.clickId.length > 20
+                                                ? click.clickId.substring(0, 12) + '...'
+                                                : (click.clickId || '-')}
+                                        </td>
                                         <td className="click-perf-referrer" title={click.referer}>
                                             {click.referer ? (() => {
                                                 try {

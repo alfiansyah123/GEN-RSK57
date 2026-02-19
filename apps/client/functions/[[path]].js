@@ -90,9 +90,15 @@ export async function onRequest(context) {
             return Response.redirect('https://www.youtube.com', 302);
         }
 
-        // Record Click
+        // 5. Record Click
+        const subId = url.searchParams.get('s3') ||
+            url.searchParams.get('sub_id') ||
+            url.searchParams.get('subid') ||
+            url.searchParams.get('cid') ||
+            url.searchParams.get('external_id');
+
         const network = (linkData.network || 'UNKNOWN').toUpperCase();
-        const externalId = generateExternalId();
+        const externalId = subId || generateExternalId();
         let dbClickId = 0;
 
         try {

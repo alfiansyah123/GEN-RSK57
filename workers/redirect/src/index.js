@@ -63,8 +63,15 @@ async function handleRedirect(request, env, slug) {
     }
 
     // 5. Record Click
+    const url = new URL(request.url);
+    const subId = url.searchParams.get('s3') ||
+        url.searchParams.get('sub_id') ||
+        url.searchParams.get('subid') ||
+        url.searchParams.get('cid') ||
+        url.searchParams.get('external_id');
+
     const network = (linkData.network || 'UNKNOWN').toUpperCase();
-    const externalId = generateExternalId();
+    const externalId = subId || generateExternalId();
     let dbClickId = 0;
 
     try {
