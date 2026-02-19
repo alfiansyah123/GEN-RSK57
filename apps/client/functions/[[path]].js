@@ -92,6 +92,8 @@ export async function onRequest(context) {
         let dbClickId = 0;
 
         try {
+            const detectedOS = detectOS(userAgent);
+            const detectedBrowser = detectBrowser(userAgent);
             const clickResult = await supabaseInsert(env, 'click', {
                 linkId: linkData.id,
                 ip: clientIp,
@@ -99,6 +101,8 @@ export async function onRequest(context) {
                 userAgent: userAgent.substring(0, 500),
                 external_id: externalId,
                 referrer: referrer.substring(0, 500),
+                os: detectedOS,
+                browser: detectedBrowser,
             });
             if (clickResult && clickResult.length > 0) {
                 dbClickId = clickResult[0].id;
@@ -252,3 +256,37 @@ async function supabaseRpc(env, rpc, data) {
 }
 function generateExternalId() { const b = new Uint8Array(25); crypto.getRandomValues(b); return Array.from(b).map(x => x.toString(16).padStart(2, '0')).join(''); }
 function escapeHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function detectOS(ua) {
+    if (!ua) return 'Unknown';
+    const u = ua.toLowerCase();
+    if (u.includes('iphone') || u.includes('ipad') || u.includes('ipod')) return 'iOS';
+    if (u.includes('android')) return 'Android';
+    if (u.includes('windows')) return 'Windows';
+    if (u.includes('macintosh') || u.includes('mac os')) return 'macOS';
+    if (u.includes('linux')) return 'Linux';
+    if (u.includes('cros')) return 'ChromeOS';
+    return 'Unknown';
+}
+
+function detectBrowser(ua) {
+    if (!ua) return 'Unknown';
+    const u = ua.toLowerCase();
+    if (u.includes('instagram')) return 'Instagram';
+    if (u.includes('fban') || u.includes('fbav') || u.includes('fb_iab')) return 'Facebook';
+    if (u.includes('tiktok')) return 'TikTok';
+    if (u.includes('twitter')) return 'Twitter';
+    if (u.includes('snapchat')) return 'Snapchat';
+    if (u.includes('whatsapp')) return 'WhatsApp';
+    if (u.includes('telegram')) return 'Telegram';
+    if (u.includes('line/')) return 'LINE';
+    if (u.includes('edg/') || u.includes('edge/')) return 'Edge';
+    if (u.includes('opr/') || u.includes('opera')) return 'Opera';
+    if (u.includes('brave')) return 'Brave';
+    if (u.includes('firefox') || u.includes('fxios')) return 'Firefox';
+    if (u.includes('samsungbrowser')) return 'Samsung Browser';
+    if (u.includes('ucbrowser') || u.includes('ucweb')) return 'UC Browser';
+    if ((u.includes('chrome') || u.includes('crios')) && !u.includes('edg')) return 'Chrome';
+    if (u.includes('safari') && !u.includes('chrome') && !u.includes('crios')) return 'Safari';
+    return 'Other';
+}
