@@ -78,19 +78,20 @@ CREATE TABLE IF NOT EXISTS link (
 );
 
 -- ============================================
--- Tabel: click
+-- Tabel: clicks (Untuk Live Traffic)
 -- ============================================
 CREATE TABLE IF NOT EXISTS clicks (
-    id SERIAL PRIMARY KEY,
-    "linkId" INT NOT NULL REFERENCES link(id) ON DELETE CASCADE,
-    ip VARCHAR(191) NOT NULL,
-    country VARCHAR(191) NOT NULL,
-    "userAgent" TEXT NOT NULL,
-    external_id VARCHAR(255),
-    referrer TEXT,
-    os VARCHAR(50),
-    browser VARCHAR(50),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT NOW()
+    id BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    link_id BIGINT,
+    slug TEXT,
+    country TEXT,
+    ip_address TEXT,
+    user_agent TEXT,
+    click_id TEXT,
+    os TEXT,
+    browser TEXT,
+    referer TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_clicks_link_id ON clicks(link_id);
 CREATE INDEX IF NOT EXISTS idx_clicks_created_at ON clicks(created_at);
