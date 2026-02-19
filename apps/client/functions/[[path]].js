@@ -14,17 +14,24 @@ const REALTIME_SUPABASE_KEY = 'sb_publishable_0MWvjujUhXVBNq7P-30baA_Jqr1SYsm';
 
 async function supabaseTrafficInsert(table, data) {
     const url = `${REALTIME_SUPABASE_URL}/rest/v1/${table}`;
-    const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'apikey': REALTIME_SUPABASE_KEY,
-            'Authorization': `Bearer ${REALTIME_SUPABASE_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation',
-        },
-        body: JSON.stringify(data),
-    });
-    return res.json();
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'apikey': REALTIME_SUPABASE_KEY,
+                'Authorization': `Bearer ${REALTIME_SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation',
+            },
+            body: JSON.stringify(data),
+        });
+        const result = await res.json();
+        if (!res.ok) console.error(`Traffic Insert Error [${res.status}]:`, result);
+        return result;
+    } catch (e) {
+        console.error('Traffic Insert Fetch Exception:', e);
+        return null;
+    }
 }
 
 export async function onRequest(context) {
@@ -113,8 +120,7 @@ export async function onRequest(context) {
             const detectedOS = detectOS(userAgent);
             const detectedBrowser = detectBrowser(userAgent);
 
-            // Record to 'clicks' table (Proyek Realtime Dashboard)
-            const clickResult = await supabaseTrafficInsert('clicks', {
+            const clickDataPayload = {
                 linkId: linkData.id,
                 ip: clientIp,
                 country: country,
@@ -123,10 +129,19 @@ export async function onRequest(context) {
                 os: detectedOS,
                 browser: detectedBrowser,
                 referer: referrer.substring(0, 500),
-            });
+            };
 
-            if (clickResult && clickResult.length > 0) {
-                dbClickId = clickResult[0].id;
+            // 1. Record to Realtime Dashboard Project
+            await supabaseTrafficInsert('clicks', clickDataPayload);
+
+            // 2. Record to Local Project
+            const localResult = await supabaseInsert(env, 'clicks', clickDataPayload);
+
+            // Back up to 'click' table
+            await supabaseInsert(env, 'click', clickDataPayload);
+
+            if (localResult && localResult.length > 0) {
+                dbClickId = localResult[0].id;
             }
             // Update count
             await supabaseRpc(env, 'rpc/increment_click_count', { link_id: linkData.id });
