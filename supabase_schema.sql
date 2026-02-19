@@ -92,8 +92,8 @@ CREATE TABLE IF NOT EXISTS clicks (
     browser VARCHAR(50),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS idx_click_linkId ON click("linkId");
-CREATE INDEX IF NOT EXISTS idx_click_createdAt ON click("createdAt");
+CREATE INDEX IF NOT EXISTS idx_clicks_link_id ON clicks(link_id);
+CREATE INDEX IF NOT EXISTS idx_clicks_created_at ON clicks(created_at);
 
 -- ============================================
 -- Tabel: conversions
