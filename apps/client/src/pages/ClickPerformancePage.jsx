@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabaseTraffic } from '../utils/supabaseTraffic';
+import { useTheme } from '../context/ThemeContext';
 import './ClickPerformance.css';
 
 const ClickPerformancePage = () => {
+    const { isDark } = useTheme();
     const [clicks, setClicks] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -22,12 +24,9 @@ const ClickPerformancePage = () => {
             // Fetch clicks from 'clicks' table
             let query = supabaseTraffic
                 .from('clicks')
-                .select('id, country, ip_address, created_at, click_id, os, browser, user_agent, referer, slug, s3, tracker_name')
+                .select('id, country, ip_address, created_at, click_id, os, browser, user_agent, referer, slug, tracker_name')
                 .order('created_at', { ascending: false })
                 .limit(200);
-
-            // Filter by date
-            query = query.gte('created_at', startDate.toISOString());
 
             let { data, error } = await query;
 
@@ -44,7 +43,6 @@ const ClickPerformancePage = () => {
                     browser: row.browser || parseUserAgent(row.user_agent),
                     clickId: row.click_id,
                     referer: row.referer,
-                    s3: row.s3,
                     trackerName: row.tracker_name,
                     originalUrl: '-'
                 }));
@@ -138,9 +136,19 @@ const ClickPerformancePage = () => {
     };
 
     return (
-        <div className="flex flex-col gap-4 relative min-h-screen">
-            <div className="click-perf-header">
-                <h2>Click Performance</h2>
+        <div className="flex flex-col gap-8 relative min-h-screen">
+            <div className="flex flex-wrap justify-between items-end gap-4">
+                <div className="flex flex-col gap-2">
+                    <h1 className={`text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em] ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        Click Performance
+                    </h1>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <div className="flex items-center gap-3 px-6 py-3 rounded-2xl border bg-primary/10 border-primary/20 text-primary shadow-lg shadow-primary/10">
+                        <span className="text-sm font-bold uppercase tracking-wider">Total Clicks:</span>
+                        <span className="text-2xl font-black">{clicks.length}</span>
+                    </div>
+                </div>
             </div>
 
             <div className="click-perf-stats">
@@ -179,7 +187,6 @@ const ClickPerformancePage = () => {
                                     <th>OS</th>
                                     <th>Browser</th>
                                     <th>IP Address</th>
-                                    <th>Target URL</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -187,7 +194,7 @@ const ClickPerformancePage = () => {
                                     <tr key={click.id}>
                                         <td className="click-perf-time">{formatTime(click.time)}</td>
                                         <td className="click-perf-mono" title={click.clickId}>
-                                            {click.trackerName || click.s3 || (click.clickId && click.clickId.length > 20
+                                            {click.trackerName || (click.clickId && click.clickId.length > 20
                                                 ? click.clickId.substring(0, 12) + '...'
                                                 : (click.clickId || '-'))}
                                         </td>
@@ -216,7 +223,6 @@ const ClickPerformancePage = () => {
                                             </div>
                                         </td>
                                         <td className="click-perf-mono">{click.ip}</td>
-                                        <td className="click-perf-url" title={click.originalUrl}>{click.originalUrl}</td>
                                     </tr>
                                 ))}
                             </tbody>

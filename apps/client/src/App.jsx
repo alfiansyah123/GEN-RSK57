@@ -27,7 +27,9 @@ function AppContent() {
   const isCampaigns = path.startsWith('/campaigns');
   const isAddonDomains = path.startsWith('/addon-domains');
 
-  const isAdminPage = isDashboard || isCampaigns || isAddonDomains;
+  const isReports = path.startsWith('/reports');
+
+  const isAdminPage = isDashboard || isCampaigns || isAddonDomains || isReports;
   const isGeneratorPage = !isAdminPage && !isLoginPage;
 
   return (

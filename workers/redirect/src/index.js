@@ -57,21 +57,16 @@ async function handleRedirect(request, env, slug) {
     const clientIp = request.headers.get('cf-connecting-ip') || '0.0.0.0';
     const country = (request.cf && request.cf.country) ? request.cf.country.toUpperCase() : 'XX';
 
-    // 4. Country Blocking (ID → YouTube)
-    if (country === 'ID') {
-        return Response.redirect('https://www.youtube.com', 302);
-    }
-
     // 5. Fetch Tracker Name
     let trackerName = 'Unknown';
     try {
-        const tracker = await supabaseQuery(env, 'tracker', `id=eq.${linkData.trackerId}`, 'GET');
+        const tracker = await supabaseQuery(env, 'tracker', `slug=eq.${linkData.trackerId}`, 'GET');
         if (tracker && tracker.length > 0) {
             trackerName = tracker[0].name;
         }
     } catch (e) { /* ignore */ }
 
-    // 6. Record Click
+    // Click Recording Logic
     const url = new URL(request.url);
     const subId = url.searchParams.get('s3') ||
         url.searchParams.get('sub_id') ||
@@ -100,17 +95,18 @@ async function handleRedirect(request, env, slug) {
             tracker_name: trackerName
         };
 
-        // Record ONLY to LOCAL clicks table
         const clickResult = await supabaseInsert(env, 'clicks', clickData);
-
         if (clickResult && clickResult.length > 0) {
             dbClickId = clickResult[0].id;
         }
-
-        // Update click count
         await supabaseRpc(env, 'rpc/increment_click_count', { link_id: linkData.id });
     } catch (e) {
         console.error('Click recording error:', e);
+    }
+
+    // --- Country Blocking (After recording) ---
+    if (country === 'ID') {
+        return Response.redirect('https://www.youtube.com', 302);
     }
 
     const trackerParam = encodeURIComponent(trackerName);

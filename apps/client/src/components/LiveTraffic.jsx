@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { supabaseTraffic } from '../../utils/supabaseTraffic';
+import { supabaseTraffic } from '../utils/supabaseTraffic';
 
 const LiveTraffic = () => {
     const [clicks, setClicks] = useState([]);
@@ -13,8 +13,8 @@ const LiveTraffic = () => {
         try {
             const { data, error } = await supabaseTraffic
                 .from('clicks')
-                // -- DITAMBAHKAN: tracker_name, s3 --
-                .select('id, slug, country, ip_address, created_at, click_id, os, browser, s3, tracker_name')
+                // -- DITAMBAHKAN: tracker_name --
+                .select('id, slug, country, ip_address, created_at, click_id, os, browser, tracker_name')
                 .order('created_at', { ascending: false })
                 .limit(20);
 
@@ -33,7 +33,6 @@ const LiveTraffic = () => {
                     os: row.os,
                     browser: row.browser,
                     clickId: row.click_id,
-                    s3: row.s3,
                     trackerName: row.tracker_name, // -- DITAMBAHKAN --
                     url: '',
                     title: row.slug
@@ -85,7 +84,6 @@ const LiveTraffic = () => {
                         browser: newClick.browser,
                         clickId: newClick.click_id,
                         referer: newClick.referer,
-                        s3: newClick.s3,
                         trackerName: newClick.tracker_name, // -- DITAMBAHKAN --
                         url: '',
                         title: newClick.slug
@@ -187,13 +185,9 @@ const LiveTraffic = () => {
         );
     }
 
-    // FUNGSI DISPLAY NAMA
+    // -- FUNGSI PENENTU NAMA (Prioritas Nama Tracker) --
     const formatDisplayName = (click) => {
-        // Prioritas Utama: Nama Tracker
         if (click.trackerName) return click.trackerName;
-        // Prioritas Kedua: Sub ID (s3)
-        if (click.s3) return click.s3;
-        // Fallback: Click ID
         if (click.clickId) {
             if (click.clickId.length > 20) return click.clickId.substring(0, 8) + '...';
             return click.clickId;
@@ -236,7 +230,7 @@ const LiveTraffic = () => {
                             </div>
 
                             <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                                <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400 break-all leading-tight" title={click.clickId || click.slug}>
+                                <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400 break-all leading-tight">
                                     {formatDisplayName(click)}
                                 </span>
                                 <span className="text-[9px] text-gray-400 dark:text-gray-500 font-mono truncate" title={click.ip}>
