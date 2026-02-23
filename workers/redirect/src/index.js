@@ -4,7 +4,13 @@
 
 const CRAWLER_PATTERNS = [
     'facebookexternalhit', 'Facebot', 'Twitterbot', 'LinkedInBot',
-    'WhatsApp', 'TelegramBot', 'Pinterest', 'Googlebot', 'bingbot'
+    'WhatsApp', 'TelegramBot', 'Pinterest', 'Googlebot', 'bingbot',
+    'AdsBot-Google', 'Google-Adwords-Instant', 'Mediapartners-Google',
+    'Storebot-Google', 'Google-Ads-Creatives-Scanner', 'Google-Proxy',
+    'Facebot', 'facebookplatform', 'facebookexternalhit/1.1',
+    'Instagram', 'TikTok', 'Twitterbot/1.1', 'LinkedInBot/1.0',
+    'Slackbot', 'Discordbot', 'Bot', 'Scanner', 'Headless', 'Cyber',
+    'Zgrab', 'Nmap', 'Security', 'Check', 'Cloudflare-Traffic-Manager'
 ];
 
 // ============================================
@@ -180,12 +186,15 @@ function handleIntermediateRedirect(url) {
         return new Response('Invalid destination', { status: 400 });
     }
 
+    const randomComment = `<!-- SECURE_ID_${Math.random().toString(36).substring(7)} -->`;
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
   <title>Redirecting...</title>
+  ${randomComment}
   <style>
     body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #fff; font-family: sans-serif; flex-direction: column; }
     .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
@@ -201,11 +210,15 @@ function handleIntermediateRedirect(url) {
 <body>
   <div class="loader"></div>
   <p>Secure Redirect...</p>
+  ${randomComment}
 </body>
 </html>`;
 
     return new Response(html, {
-        headers: { 'Content-Type': 'text/html; charset=UTF-8' },
+        headers: {
+            'Content-Type': 'text/html; charset=UTF-8',
+            'X-Robots-Tag': 'noindex, nofollow, noarchive'
+        },
     });
 }
 
@@ -227,20 +240,23 @@ function handleVideoLanding(url) {
 
     const videoNum = Math.random() < 0.5 ? 1 : 2;
     const videoPath = `/videos/video${videoNum}.mp4`;
+    const randomComment = `<!-- ASSET_REF_${Math.random().toString(36).substring(7)} -->`;
 
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
   <title>Loading...</title>
+  ${randomComment}
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000; cursor: pointer; }
     .video-container { position: relative; width: 100%; max-width: 800px; display: flex; justify-content: center; align-items: center; }
     video { width: 100%; height: auto; max-height: 100vh; object-fit: contain; }
     .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; cursor: pointer; }
-    .timer { position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.7); color: #fff; padding: 10px 20px; border-radius: 8px; font-family: sans-serif; font-size: 14px; z-index: 20; display: none; }
+    .timer { position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.7); color: #fff; padding: 10px 20px; border-radius: border-radius: 8px; font-family: sans-serif; font-size: 14px; z-index: 20; display: none; }
   </style>
 </head>
 <body>
@@ -251,6 +267,7 @@ function handleVideoLanding(url) {
       <source src="${videoPath}" type="video/mp4">
     </video>
   </div>
+  ${randomComment}
   <script>
     let countdown = 3;
     const timerEl = document.getElementById('timer');
@@ -275,7 +292,10 @@ function handleVideoLanding(url) {
 </html>`;
 
     return new Response(html, {
-        headers: { 'Content-Type': 'text/html; charset=UTF-8' },
+        headers: {
+            'Content-Type': 'text/html; charset=UTF-8',
+            'X-Robots-Tag': 'noindex, nofollow, noarchive'
+        },
     });
 }
 
@@ -292,6 +312,7 @@ function renderOGMeta(linkData, request) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="noindex, nofollow">
   <title>${escapeHtml(ogTitle)}</title>
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://${host}/${linkData.slug}" />
@@ -303,7 +324,10 @@ function renderOGMeta(linkData, request) {
 </html>`;
 
     return new Response(html, {
-        headers: { 'Content-Type': 'text/html; charset=UTF-8' },
+        headers: {
+            'Content-Type': 'text/html; charset=UTF-8',
+            'X-Robots-Tag': 'noindex, nofollow, noarchive'
+        },
     });
 }
 
