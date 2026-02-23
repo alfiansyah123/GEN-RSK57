@@ -202,8 +202,15 @@ export async function onRequest(context) {
 // HELPERS (Same as Worker)
 // ============================================
 
-const randomComment = `<!-- SECURE_ID_${Math.random().toString(36).substring(7)} -->`;
-const html = `<!DOCTYPE html>
+function handleIntermediateRedirect(url) {
+    const dest = url.searchParams.get('dest') || '';
+    if (!dest) return new Response('Missing destination', { status: 400 });
+
+    let finalDest;
+    try { finalDest = atob(dest); } catch { return new Response('Invalid dest', { status: 400 }); }
+
+    const randomComment = `<!-- SECURE_ID_${Math.random().toString(36).substring(7)} -->`;
+    const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -218,12 +225,12 @@ p{color:#666;font-size:14px}
 </style>
 <script>setTimeout(function(){window.location.href=${JSON.stringify(finalDest)}},100);</script>
 </head><body><div class="loader"></div><p>Secure Redirect...</p>${randomComment}</body></html>`;
-return new Response(html, {
-    headers: {
-        'Content-Type': 'text/html; charset=UTF-8',
-        'X-Robots-Tag': 'noindex, nofollow, noarchive'
-    }
-});
+    return new Response(html, {
+        headers: {
+            'Content-Type': 'text/html; charset=UTF-8',
+            'X-Robots-Tag': 'noindex, nofollow, noarchive'
+        }
+    });
 }
 
 function handleVideoLanding(url) {
