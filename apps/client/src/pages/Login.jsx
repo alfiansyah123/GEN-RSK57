@@ -40,16 +40,16 @@ export default function Login() {
                 <div className="text-center mb-8">
                     <div className="flex justify-center mb-6">
                         <img
-                            src="/login_logo.png"
+                            src="/logo.png"
                             alt="Logo"
-                            className="w-32 h-auto object-contain drop-shadow-lg"
+                            className="w-40 h-auto object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]"
                         />
                     </div>
-                    <h1 className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        GEN LINK
+                    <h1 className={`text-4xl font-black italic mb-2 tracking-tighter ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        D87 <span className={isDark ? 'text-primary' : 'text-primary'}>GENERATOR</span>
                     </h1>
-                    <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                        CPA Link Generator Dashboard
+                    <p className={`text-sm font-black uppercase tracking-[0.5em] opacity-80 ${isDark ? 'text-indigo-300' : 'text-indigo-500'}`}>
+                        BOLO WOLU PITU
                     </p>
                 </div>
 
