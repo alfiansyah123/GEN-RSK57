@@ -1,0 +1,73 @@
+CAMPAIGNS:
+Array
+(
+    [0] => Array
+        (
+            [id] => 20
+            [network] => iMonetizeit
+            [urlTemplate] => https://domain.com/c/xx?s1=xx&s2=xx&s3={sub_id}&click_id={click_id}&j1=1&j3=1
+            [offerName] => https://nrwaee.unfamllliardates.com/?utm_source=da57dc555e50572d&ban=inst&j1=1&s1=239743&s2=2227421&s3={sub_id}&click_id={click_id}
+        )
+
+    [1] => Array
+        (
+            [id] => 19
+            [network] => Lospollos
+            [urlTemplate] => https://domain.com/?u=xx&o=xx&t={sub_id}&cid={click_id}
+            [offerName] => https://glfphrk.true-honey-partners.com/xv029yp?s1={sub_id}&cid={click_id}
+        )
+
+    [2] => Array
+        (
+            [id] => 2
+            [network] => Trafee
+            [urlTemplate] => https://domain.com/c/xxxxx?subsource={sub_id}&track={click_id}
+            [offerName] => https://dchggad.aiflirtclick.com/s/677e17d214579?track={click_id}&subsource={sub_id}
+        )
+
+)
+
+LINKS:
+Array
+(
+    [0] => Array
+        (
+            [id] => 455
+            [slug] => iYRtWJZ1K6cAj4G9aSm13S1Rx1ElCPJb
+            [network] => iMonetizeit
+            [targetUrl] => https://nrwaee.unfamllliardates.com/?utm_source=da57dc555e50572d&ban=inst&j1=1&s1=239743&s2=2227421&s3=KUNGFU-PANDA&click_id={click_id}
+        )
+
+    [1] => Array
+        (
+            [id] => 454
+            [slug] => l66QoYX4G6BJYu79nJZ92U1NFhN1Ifeg
+            [network] => iMonetizeit
+            [targetUrl] => https://nrwaee.unfamllliardates.com/?utm_source=da57dc555e50572d&ban=inst&j1=1&s1=239743&s2=2227421&s3=KUNGFU-PANDA&click_id={click_id}
+        )
+
+    [2] => Array
+        (
+            [id] => 453
+            [slug] => S5AfbTyKyg6YKO2PORxiC5fQVd5QP6oW
+            [network] => Lospollos
+            [targetUrl] => https://glfphrk.true-honey-partners.com/xv029yp?s1=KUNGFU-PANDA&cid={click_id}
+        )
+
+    [3] => Array
+        (
+            [id] => 452
+            [slug] => F5110JlNhuK2bFVOaJMNLvN3Ac7UFQIL
+            [network] => Lospollos
+            [targetUrl] => https://glfphrk.true-honey-partners.com/xv029yp?s1=MONTECARLO&cid={click_id}
+        )
+
+    [4] => Array
+        (
+            [id] => 451
+            [slug] => meCy109J5Hof6imI5E91Yy9zXCGjA5He
+            [network] => iMonetizeit
+            [targetUrl] => https://nrwaee.unfamllliardates.com/?utm_source=da57dc555e50572d&ban=inst&j1=1&s1=239743&s2=2227421&s3=MONTECARLO&click_id={click_id}
+        )
+
+)

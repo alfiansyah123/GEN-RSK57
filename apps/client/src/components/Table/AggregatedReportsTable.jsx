@@ -66,9 +66,16 @@ export default function AggregatedReportsTable({ data = [], onDrillDown, currenc
                                         </button>
                                     </td>
                                     <td className="px-6 py-3">
-                                        <span className={`px-2 py-0.5 rounded text-xs border ${row.network?.toLowerCase().includes('lospollos')
+                                        <span className={`px-2 py-0.5 rounded text-xs border ${
+                                            row.network?.toLowerCase().includes('imonetizeit')
+                                                ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
+                                                : row.network?.toLowerCase().includes('lospollos')
                                                 ? 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800'
-                                                : 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
+                                                : row.network?.toLowerCase().includes('clickdealer')
+                                                ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
+                                                : row.network?.toLowerCase().includes('trafee')
+                                                ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800'
+                                                : 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/30 dark:text-gray-300 dark:border-gray-800'
                                             }`}>
                                             {row.network}
                                         </span>

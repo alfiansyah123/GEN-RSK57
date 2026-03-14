@@ -66,25 +66,49 @@ export default function GeneratorAddonDomain() {
                             }`}>
 
                             <div className="p-4 md:p-10 relative">
-                                {/* Logo Banner */}
-                                <div className="mb-8 rounded-2xl overflow-hidden shadow-lg">
-                                    <img
-                                        src="/logo.png"
-                                        alt="Banner"
-                                        className="w-full h-auto object-cover"
-                                    />
-                                </div>
+                                {/* Fully Centered Premium Header: Reverted to Logo Top */}
+                                <div className="flex flex-col items-center text-center gap-8 mb-12 pb-10 border-b border-white/10">
+                                    
+                                    {/* Logo Section */}
+                                    <div className="relative group">
+                                        <div className="absolute -inset-4 bg-indigo-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                                        <img
+                                            src="/logo.png"
+                                            alt="D87"
+                                            className="h-36 md:h-52 w-auto object-contain relative transition-transform duration-700 hover:scale-110 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+                                        />
+                                    </div>
 
-                                {/* Navigation & Tracker ID */}
-                                <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
-                                    <GeneratorNavigation />
+                                    {/* Title Section */}
+                                    <div className="space-y-4 max-w-2xl">
+                                        <div className="flex flex-col items-center">
+                                            <h2 className={`text-4xl md:text-7xl font-black italic tracking-tighter leading-[0.8] ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                                D87 <span className={isDark ? 'text-indigo-500' : 'text-indigo-600'}>ADDON DOMAIN</span>
+                                            </h2>
+                                            <p className={`mt-4 text-sm md:text-xl font-black uppercase tracking-[0.8em] opacity-80 ${isDark ? 'text-indigo-300' : 'text-indigo-500'}`}>
+                                                BOLO WOLU PITU
+                                            </p>
+                                        </div>
 
-                                    <div className={`flex items-center gap-3 px-5 py-2.5 rounded-2xl border ${isDark
-                                        ? 'bg-[#16172b] border-[#323367] text-indigo-300'
-                                        : 'bg-indigo-50 border-indigo-100 text-indigo-600'
-                                        }`}>
-                                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                        <span className="text-sm font-semibold tracking-wide uppercase">Tracker: {trackerId}</span>
+                                        {/* Tracker Badge - Centered & Bold */}
+                                        <div className="flex justify-center mt-6">
+                                            <div className={`flex items-center gap-4 px-8 py-3 rounded-full border-2 shadow-xl transition-all ${isDark
+                                                ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300 shadow-indigo-500/5'
+                                                : 'bg-white border-indigo-100 text-indigo-600 shadow-lg'
+                                                }`}>
+                                                <span className="text-[11px] font-black uppercase tracking-[0.2em] opacity-60">TRACKER ACTIVE</span>
+                                                <div className="w-[2px] h-4 bg-current opacity-20"></div>
+                                                <span className="text-xl font-black tracking-widest uppercase italic">{trackerId}</span>
+                                                <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse ring-4 ring-green-500/20 ml-1"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Navigation Section - Centered */}
+                                    <div className="mt-4">
+                                        <div className={`p-2 rounded-[2.5rem] shadow-2xl transition-all ${isDark ? 'bg-black/40 border border-white/10 backdrop-blur-xl' : 'bg-white border border-gray-200'}`}>
+                                            <GeneratorNavigation />
+                                        </div>
                                     </div>
                                 </div>
 

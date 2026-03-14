@@ -195,7 +195,7 @@ export default function ConversionTable({ searchQuery, currency = 'USD', currenc
                                             if (lowerNet.includes('imonetizeit')) {
                                                 badgeClass = "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
                                             } else if (lowerNet.includes('lospollos')) {
-                                                badgeClass = "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800";
+                                                badgeClass = "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800";
                                             } else if (lowerNet.includes('clickdealer')) {
                                                 badgeClass = "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800";
                                             } else if (lowerNet.includes('trafee')) {
