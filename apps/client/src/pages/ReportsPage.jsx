@@ -37,7 +37,8 @@ const ReportsPage = ({ onLogout, currency, setCurrency, currencyRate, setCurrenc
                 .select('*')
                 .gte('date', startDate)
                 .lte('date', endDate)
-                .order('date', { ascending: false });
+                .order('date', { ascending: false })
+                .or('clicks.gt.0,leads.gt.0'); // Only fetch rows with actual activity
 
             if (error) throw error;
             setData(data || []);
