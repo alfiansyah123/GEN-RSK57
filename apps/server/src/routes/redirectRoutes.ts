@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import geoip from 'geoip-lite';
 import requestIp from 'request-ip';
 import { broadcastClick } from '../websocket';
+import { supabase } from '../supabase';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -187,12 +188,14 @@ router.get('/:slug', async (req, res, next) => {
         const { slug } = req.params;
         const userAgent = req.get('User-Agent') || 'Unknown';
 
-        // 1. Find the link
-        const link = await prisma.link.findUnique({
-            where: { slug }
-        });
+        // 1. Find the link in Supabase
+        const { data: link, error: linkError } = await supabase
+            .from('link')
+            .select('*')
+            .eq('slug', slug)
+            .single();
 
-        if (!link) {
+        if (linkError || !link) {
             // Link not found -> Could be a frontend route -> Pass to next handler
             return next();
         }
@@ -230,71 +233,82 @@ router.get('/:slug', async (req, res, next) => {
             return res.send(ogHtml);
         }
 
-        // 2. Get User Info
+        // 3. Get User Info
         let clientIp = requestIp.getClientIp(req) || '127.0.0.1';
 
         // MOCK FOR LOCALHOST TESTING:
-        // If localhost, use a random public IP to simulate different countries
         if (clientIp === '::1' || clientIp === '127.0.0.1') {
             const mockIps = [
-                '1.1.1.1',     // AU/US (Cloudflare)
-                '103.1.1.1',   // ID (Indonesia)
-                '203.0.113.1', // Reserved/US
-                '8.8.8.8',     // US (Google)
-                '185.76.9.5'   // DE (Germany example)
+                '1.1.1.1',     // AU/US
+                '103.1.1.1',   // ID
+                '203.0.113.1', // US
+                '8.8.8.8',     // US
+                '185.76.9.5'   // DE
             ];
             clientIp = mockIps[Math.floor(Math.random() * mockIps.length)];
         }
 
         const geo = geoip.lookup(clientIp);
-        const country = geo ? geo.country : 'XX'; // XX for unknown
-        console.log(`[DEBUG] IP: ${clientIp}, Country: ${country}`);
-
-        // --- GEO BLOCKING / SAFE PAGE ---
-        // If Country is ID (Indonesia), Redirect to Safe Page (YouTube)
-        if (country === 'ID') {
-            return res.redirect('https://www.youtube.com/watch?v=rQ9YQJ3JpWw');
-        }
-        // --------------------------------
+        const country = geo ? geo.country : 'XX';
 
         const year = new Date().getFullYear();
         const network = link.network ? link.network.toUpperCase() : 'UNKNOWN';
-        const uaShort = userAgent.toLowerCase().includes('mobile') ? 'MOB' : 'WEB'; // Simple platform detection
+        const uaShort = userAgent.toLowerCase().includes('mobile') ? 'MOB' : 'WEB';
 
-        // 3. Encode Data (The "Cooking" Process)
+        // 4. Encode Data (The "Cooking" Process)
         const rawString = `${year},${country},${clientIp},${uaShort},${network}`;
         const encodedData = Buffer.from(rawString).toString('base64');
         const finalClickId = `${encodedData}${slug}`;
 
-        // 4. Record Click for Reporting (Granular data for clone-ngix)
-        prisma.click.create({
-            data: {
-                linkId: link.id,
-                ip: clientIp,
-                country: country,
-                userAgent: userAgent.substring(0, 500) // Limit UA length
-            }
-        }).catch(err => console.error('Error logging click:', err));
+        // 5. Record Click for Reporting (SUPABASE)
+        // We do this BEFORE any redirect so test clicks from ID are captured
+        supabase.from('clicks').insert([{
+            slug: slug,
+            ip_address: clientIp,
+            country: country,
+            user_agent: userAgent,
+            os: uaShort,
+            click_id: finalClickId,
+            tracker_name: link.trackerId
+        }]).then(({ error }) => {
+            if (error) console.error('Supabase log click error:', error);
+        });
 
-        // Also increment counter for quick access
-        prisma.link.update({
-            where: { id: link.id },
-            data: { clickCount: { increment: 1 } }
-        }).catch(err => console.error('Error updating click count:', err));
+        // Update Daily Reports Aggregate (Real-time Click Tracking)
+        const today = new Date().toISOString().split('T')[0];
+        supabase.rpc('increment_click_count', {
+            click_date: today,
+            click_smartlink: link.trackerId, // Tracker Name
+            click_network: network
+        }).then(({ error }) => {
+            if (error) console.error('Supabase RPC increment_click_count error:', error);
+        });
 
-        // 5. Broadcast to Live Traffic WebSocket
+        // Increment clickCount in link table
+        supabase.from('link')
+            .update({ clickCount: (link.clickCount || 0) + 1 })
+            .eq('id', link.id)
+            .then(({ error }) => {
+                if (error) console.error('Supabase update link error:', error);
+            });
+
+        // 6. Broadcast to Live Traffic WebSocket
         broadcastClick({
             trackerId: link.trackerId,
             country: country,
-            ip: clientIp.substring(0, 10) + '***', // Mask IP for privacy
+            ip: clientIp.substring(0, 10) + '***',
             platform: uaShort,
             network: network,
             timestamp: new Date().toISOString()
         });
 
-        // 5. Construct Final Redirect URL
-        let finalUrl = link.targetUrl;
+        // --- GEO BLOCKING / SAFE PAGE ---
+        if (country === 'ID') {
+            return res.redirect('https://www.youtube.com/watch?v=rQ9YQJ3JpWw');
+        }
 
+        // 7. Construct Final Redirect URL
+        let finalUrl = link.targetUrl;
         if (finalUrl.includes('{click_id}')) {
             finalUrl = finalUrl.replace('{click_id}', finalClickId);
         } else {
@@ -302,28 +316,18 @@ router.get('/:slug', async (req, res, next) => {
             finalUrl += `${separator}click_id=${finalClickId}`;
         }
 
-        // --- INTERMEDIATE REDIRECT ---
-        // Determine the immediate destination (Video Page or Final Offer)
+        // 8. Intermediate Redirect
         let immediateDest = finalUrl;
-
         if (link.useLandingPage) {
-            // If Landing Page enabled: r.php -> Video Page -> Final Offer
-            // We need to encode the Final Offer for the Video Page
             const encodedFinalForVideo = Buffer.from(finalUrl).toString('base64');
-            // The immediate destination for r.php is the Video Page
             immediateDest = `/_video/landing?dest=${encodedFinalForVideo}`;
         }
 
-        // Encode the immediate destination for r.php
         const encodedDest = Buffer.from(immediateDest).toString('base64');
-
-        // Always redirect via intermediate page r.php
         const redirectUrl = `/_meetups/r.php?click_id=${link.trackerId}&country_code=${country.toLowerCase()}&user_agent=web&ip_address=${clientIp}&user_lp=${network.toLowerCase()}&dest=${encodedDest}`;
 
-        // Anti-Spam / Stealth Header: Hide Referrer
         res.set('Referrer-Policy', 'no-referrer');
         res.redirect(redirectUrl);
-        // ---------------------------------------
 
     } catch (error) {
         console.error('Redirect error:', error);
