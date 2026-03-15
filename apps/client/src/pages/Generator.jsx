@@ -127,14 +127,13 @@ export default function Generator() {
                     return;
                 }
 
-                // Use the offerName (smartlink) from the campaign
-                const resolvedTargetUrl = selectedCampaign.offerName;
+                // Use the offerName as the primary smartlink field
+                let resolvedTargetUrl = selectedCampaign.offerName;
                 const network = selectedCampaign.network;
-                // Original code: resolvedTargetUrl = selectedCampaign.offerName;
-                // Wait, campaign table has "offerName" and "urlTemplate". 
-                // Usually target URL comes from template? 
-                // But original code used offerName. I will stick to original logic.
-                resolvedTargetUrl = resolvedTargetUrl.replace('{sub_id}', trackerId);
+                
+                if (resolvedTargetUrl) {
+                    resolvedTargetUrl = resolvedTargetUrl.replace('{sub_id}', trackerId);
+                }
 
                 // Resolve Domain (Handle Random)
                 let finalDomain = selectedDomain;
@@ -186,7 +185,7 @@ export default function Generator() {
 
         } catch (error) {
             console.error('Error generating link:', error);
-            alert('Failed to generate link. Please try again.');
+            alert('Failed to generate link: ' + (error.message || 'Unknown error'));
         } finally {
             setIsLoading(false);
         }
