@@ -279,8 +279,8 @@ router.get('/:slug', async (req, res, next) => {
         try {
             const { error: rpcError } = await supabase.rpc('increment_click_count', {
                 click_date: today,
-                click_smartlink: link.trackerId, // Tracker Name
-                click_network: network
+                click_smartlink: (link.trackerId || 'UNKNOWN').toUpperCase(), // Normalize to UPPERCASE
+                click_network: network.toUpperCase() // Normalize to UPPERCASE
             });
             if (rpcError) console.error('[Supabase RPC Error]', rpcError);
         } catch (err) {
