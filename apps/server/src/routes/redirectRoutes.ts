@@ -269,7 +269,7 @@ router.get('/:slug', async (req, res, next) => {
             user_agent: userAgent,
             os: uaShort,
             click_id: finalClickId,
-            tracker_name: link.trackerId
+            tracker_name: (link.trackerId || 'UNKNOWN').toUpperCase() // Normalize to UPPERCASE
         }]).then(({ error }) => {
             if (error) console.error('Supabase log click error:', error);
         });

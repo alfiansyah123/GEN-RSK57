@@ -135,8 +135,8 @@ serve(async (req) => {
         // 3. Insert into 'conversions' table
         const conversionData = {
             click_id: finalClickId,
-            sub_id: friendlyName, // Use friendly name for subId
-            network: finalNetwork,
+            sub_id: friendlyName.toUpperCase(), // Normalize to UPPERCASE
+            network: finalNetwork.toUpperCase(), // Normalize to UPPERCASE
             country: finalCountry,
             country_name: countryName,
             traffic_type: detectedOs, // Store detected OS here
@@ -162,8 +162,8 @@ serve(async (req) => {
         // Call an RPC for the stats update to be safe and atomic
         const { error: rpcError } = await supabase.rpc('increment_daily_report', {
             report_date: today,
-            report_smartlink: friendlyName, // Gunakan friendlyName (Tracker Name)
-            report_network: finalNetwork,   // Gunakan finalNetwork
+            report_smartlink: friendlyName.toUpperCase(), // Normalize to UPPERCASE
+            report_network: finalNetwork.toUpperCase(),   // Normalize to UPPERCASE
             report_payout: payout
         })
 
