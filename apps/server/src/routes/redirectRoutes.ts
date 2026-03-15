@@ -276,13 +276,16 @@ router.get('/:slug', async (req, res, next) => {
 
         // Update Daily Reports Aggregate (Real-time Click Tracking)
         const today = new Date().toISOString().split('T')[0];
-        supabase.rpc('increment_click_count', {
-            click_date: today,
-            click_smartlink: link.trackerId, // Tracker Name
-            click_network: network
-        }).then(({ error }) => {
-            if (error) console.error('Supabase RPC increment_click_count error:', error);
-        });
+        try {
+            const { error: rpcError } = await supabase.rpc('increment_click_count', {
+                click_date: today,
+                click_smartlink: link.trackerId, // Tracker Name
+                click_network: network
+            });
+            if (rpcError) console.error('[Supabase RPC Error]', rpcError);
+        } catch (err) {
+            console.error('[Supabase RPC Catch]', err);
+        }
 
         // Increment clickCount in link table
         supabase.from('link')
