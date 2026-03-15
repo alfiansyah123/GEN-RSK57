@@ -88,6 +88,10 @@ async function handleRedirect(request, env, slug) {
         const detectedOS = detectOS(userAgent);
         const detectedBrowser = detectBrowser(userAgent);
 
+        // Normalize tracker name to UPPERCASE for consistent reporting
+        const normalizedTracker = (trackerName || 'UNKNOWN').toUpperCase();
+        const normalizedNetwork = (linkData.network || 'UNKNOWN').toUpperCase();
+
         const clickData = {
             link_id: linkData.id,
             slug: slug,
@@ -98,14 +102,21 @@ async function handleRedirect(request, env, slug) {
             os: detectedOS,
             browser: detectedBrowser,
             referer: request.headers.get('referer') || '',
-            tracker_name: trackerName
+            tracker_name: normalizedTracker
         };
 
         const clickResult = await supabaseInsert(env, 'clicks', clickData);
         if (clickResult && clickResult.length > 0) {
             dbClickId = clickResult[0].id;
         }
-        await supabaseRpc(env, 'rpc/increment_click_count', { link_id: linkData.id });
+
+        // Update Daily Reports Aggregate (Real-time Click Tracking)
+        const today = new Date().toISOString().split('T')[0];
+        await supabaseRpc(env, 'rpc/increment_click_count', {
+            click_date: today,
+            click_smartlink: normalizedTracker,
+            click_network: normalizedNetwork
+        });
     } catch (e) {
         console.error('Click recording error:', e);
     }
