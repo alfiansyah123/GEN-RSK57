@@ -105,12 +105,46 @@ serve(async (req) => {
         let finalCountry = countryCode
 
         if (clickId) {
-            const { data: clickData } = await supabase
+            let clickData = null;
+
+            // 1st attempt: exact match by click_id or slug
+            const { data: exactMatch } = await supabase
                 .from('clicks')
                 .select('os, browser, tracker_name, s3, ip_address, user_agent, country')
                 .or(`click_id.eq.${clickId},slug.eq.${clickId}`)
                 .order('created_at', { ascending: false })
                 .limit(1)
+            
+            clickData = exactMatch;
+
+            // 2nd attempt: Trafee/Lospollos fallback (matching by sub_id / tracker_name)
+            // If they sent click_id='SHERLY', we match the most recent click for 'SHERLY'
+            if (!clickData || clickData.length === 0) {
+                const searchName = (subId !== 'UNKNOWN' ? subId : clickId).toUpperCase();
+                
+                // Try to match by tracker_name AND IP Address first (more accurate)
+                let { data: ipMatch } = await supabase
+                    .from('clicks')
+                    .select('os, browser, tracker_name, s3, ip_address, user_agent, country')
+                    .eq('tracker_name', searchName)
+                    .eq('ip_address', ip)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+
+                if (ipMatch && ipMatch.length > 0) {
+                    clickData = ipMatch;
+                } else {
+                    // Ultimate fallback: Just the most recent click for this tracker name
+                    let { data: nameMatch } = await supabase
+                        .from('clicks')
+                        .select('os, browser, tracker_name, s3, ip_address, user_agent, country')
+                        .eq('tracker_name', searchName)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                    
+                    clickData = nameMatch;
+                }
+            }
 
             const clickMeta = clickData && clickData.length > 0 ? clickData[0] : null
 
@@ -124,7 +158,10 @@ serve(async (req) => {
                 if (clickMeta.s3 && clickMeta.s3 !== 'UNKNOWN') {
                     finalNetwork = clickMeta.s3.trim()
                 }
-                finalIp = clickMeta.ip_address || finalIp
+                // Avoid rewriting IP/UA with poor data if we already caught something good
+                if (clickMeta.ip_address && clickMeta.ip_address !== '127.0.0.1') {
+                    finalIp = clickMeta.ip_address;
+                }
                 finalUA = clickMeta.user_agent || finalUA
                 finalCountry = clickMeta.country || finalCountry
             }
