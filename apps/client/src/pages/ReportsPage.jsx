@@ -58,9 +58,12 @@ const ReportsPage = ({ onLogout, currency, setCurrency, currencyRate, setCurrenc
     }, [data]);
 
     const filteredData = useMemo(() => {
-        if (!searchQuery) return data;
+        // Filter out rows with zero activity
+        const activeData = data.filter(item => (parseInt(item.clicks) || 0) > 0 || (parseInt(item.leads) || 0) > 0);
+        
+        if (!searchQuery) return activeData;
         const query = searchQuery.toLowerCase();
-        return data.filter(item =>
+        return activeData.filter(item =>
             (item.smartlink && item.smartlink.toLowerCase().includes(query)) ||
             (item.network && item.network.toLowerCase().includes(query))
         );
@@ -83,7 +86,7 @@ const ReportsPage = ({ onLogout, currency, setCurrency, currencyRate, setCurrenc
                 currencyRate={currencyRate}
                 onCurrencyRateChange={setCurrencyRate}
                 totalPayout={totalPayout}
-                itemCount={data.length}
+                itemCount={filteredData.length}
                 isDarkMode={isDarkMode}
                 toggleTheme={toggleTheme}
                 onLogout={onLogout}

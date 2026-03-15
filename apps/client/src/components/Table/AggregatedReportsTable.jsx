@@ -43,6 +43,7 @@ export default function AggregatedReportsTable({ data = [], onDrillDown, currenc
                 <thead className={`text-xs uppercase font-semibold tracking-wider sticky top-0 z-10 backdrop-blur-sm shadow-sm ${isDark ? 'bg-[#1a1b2e]/95 text-gray-400' : 'bg-gray-50/95 text-gray-500'}`}>
                     <tr>
                         <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 w-16 text-center">#</th>
+                        <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:text-primary" onClick={() => handleSort('date')}>DATE</th>
                         <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:text-primary" onClick={() => handleSort('smartlink')}>SMARTLINK</th>
                         <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:text-primary" onClick={() => handleSort('network')}>NETWORK</th>
                         <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 text-center cursor-pointer hover:text-primary" onClick={() => handleSort('clicks')}>CLICKS</th>
@@ -51,59 +52,71 @@ export default function AggregatedReportsTable({ data = [], onDrillDown, currenc
                         <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 text-right cursor-pointer hover:text-primary" onClick={() => handleSort('payouts')}>PAYOUTS</th>
                     </tr>
                 </thead>
-                <tbody className={`text-sm font-medium divide-y ${isDark ? 'divide-gray-800' : 'divide-gray-100'}`}>
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                     {sortedData.length > 0 ? (
                         <>
-                            {sortedData.map((row, index) => (
-                                <tr key={index} className={`transition-colors text-gray-900 dark:text-gray-100 ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-gray-50'}`}>
-                                    <td className="px-6 py-3 text-center text-gray-500 dark:text-gray-400 font-mono">{index + 1}</td>
-                                    <td className="px-6 py-3">
-                                        <button
-                                            onClick={() => onDrillDown(row)}
-                                            className="font-medium hover:text-primary hover:underline transition-colors text-left"
-                                        >
-                                            {row.smartlink}
-                                        </button>
-                                    </td>
-                                    <td className="px-6 py-3">
-                                        <span className={`px-2 py-0.5 rounded text-xs border ${
-                                            row.network?.toLowerCase().includes('imonetizeit')
-                                                ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
-                                                : row.network?.toLowerCase().includes('lospollos')
-                                                ? 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800'
-                                                : row.network?.toLowerCase().includes('clickdealer')
-                                                ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'
-                                                : row.network?.toLowerCase().includes('trafee')
-                                                ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800'
-                                                : 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/30 dark:text-gray-300 dark:border-gray-800'
-                                            }`}>
-                                            {row.network}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-3 text-center font-mono">{row.clicks}</td>
-                                    <td className="px-6 py-3 text-center font-mono">{row.leads}</td>
-                                    <td className="px-6 py-3 text-center font-mono">{typeof row.cr === 'number' ? row.cr.toFixed(2) : row.cr}%</td>
-                                    <td className="px-6 py-3 text-right font-mono font-bold text-green-600 dark:text-green-400">
-                                        {formatCurrency(row.payouts)}
-                                    </td>
-                                </tr>
-                            ))}
+                            {sortedData.map((row, index) => {
+                                const cr = row.clicks > 0 ? ((row.leads / row.clicks) * 100).toFixed(1) : '0';
+                                return (
+                                    <tr key={index} className="bg-white dark:bg-transparent hover:bg-indigo-50/10 dark:hover:bg-indigo-500/5 transition-all">
+                                        <td className="px-6 py-4 text-xs font-medium text-gray-400">{index + 1}</td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-xs font-bold text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">
+                                                {row.date ? new Date(row.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '-'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <button
+                                                onClick={() => onDrillDown(row)}
+                                                className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-primary hover:underline transition-colors text-left"
+                                            >
+                                                {row.smartlink}
+                                            </button>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {(() => {
+                                                const network = row.network || 'Unknown';
+                                                const lowerNet = network.toLowerCase();
+                                                if (lowerNet.includes('imonetizeit')) return <div className="flex items-center gap-1.5"><div className="bg-emerald-500 rounded p-1"><span className="material-symbols-outlined text-[14px] text-white">north_east</span></div><span className="text-[10px] font-bold text-emerald-500">iMonetizeit</span></div>;
+                                                if (lowerNet.includes('lospollos')) return <div className="flex items-center gap-1.5"><div className="bg-orange-500 rounded p-1 text-[10px]">🎭</div><span className="text-[10px] font-bold text-orange-500">Lospollos</span></div>;
+                                                if (lowerNet.includes('trafee')) return <div className="flex items-center gap-1.5"><div className="bg-purple-500 rounded p-1 text-[10px]">⚡</div><span className="text-[10px] font-bold text-purple-500">Trafee</span></div>;
+                                                if (lowerNet.includes('clickdealer')) return <div className="flex items-center gap-1.5"><div className="bg-blue-500 rounded p-1 text-[10px]">🤝</div><span className="text-[10px] font-bold text-blue-500">Clickdealer</span></div>;
+                                                return <span className="text-[10px] font-bold text-gray-400">{network}</span>;
+                                            })()}
+                                        </td>
+                                        <td className="px-4 py-4 text-center">
+                                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{row.clicks}</span>
+                                        </td>
+                                        <td className="px-4 py-4 text-center">
+                                            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{row.leads}</span>
+                                        </td>
+                                        <td className="px-4 py-4 text-center">
+                                            <span className={`px-2 py-1 rounded text-xs font-bold ${parseFloat(cr) > 0 ? 'bg-green-500/10 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                                                {cr}%
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-4 text-right">
+                                            <span className="text-sm font-black text-green-600 dark:text-green-500">
+                                                {formatCurrency(row.payouts)}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                             {/* Total Row */}
-                            <tr className={`font-bold ${isDark ? 'bg-[#1a1b2e] text-white' : 'bg-gray-100 text-gray-900'}`}>
-                                <td colSpan="3" className="px-6 py-3 text-center border-t border-gray-200 dark:border-gray-700">TOTAL</td>
-                                <td className="px-6 py-3 text-center font-mono border-t border-gray-200 dark:border-gray-700">{totalClicks}</td>
-                                <td className="px-6 py-3 text-center font-mono border-t border-gray-200 dark:border-gray-700">{totalLeads}</td>
-                                <td className="px-6 py-3 text-center font-mono border-t border-gray-200 dark:border-gray-700">{totalCR.toFixed(2)}%</td>
-                                <td className="px-6 py-3 text-right font-mono text-green-600 dark:text-green-400 border-t border-gray-200 dark:border-gray-700">
+                            <tr className={`font-bold ${isDark ? 'bg-gray-800/50 text-white' : 'bg-gray-50 text-gray-900'}`}>
+                                <td colSpan="4" className="px-6 py-4 text-right pr-12 text-xs uppercase tracking-widest opacity-50">TOTAL</td>
+                                <td className="px-4 py-4 text-center font-bold">{totalClicks}</td>
+                                <td className="px-4 py-4 text-center font-bold text-indigo-500">{totalLeads}</td>
+                                <td className="px-4 py-4 text-center font-bold">{totalCR.toFixed(1)}%</td>
+                                <td className="px-4 py-4 text-right font-black text-green-500">
                                     {formatCurrency(totalPayouts)}
                                 </td>
                             </tr>
                         </>
                     ) : (
                         <tr>
-                            <td colSpan="7" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                                No data available for this period.
-                            </td>
+                            <td colSpan="7" className="px-6 py-12 text-center text-gray-500 italic">No data available for this range...</td>
                         </tr>
                     )}
                 </tbody>
