@@ -17,7 +17,7 @@ const CRAWLER_PATTERNS = [
 // MAIN HANDLER
 // ============================================
 export default {
-    async fetch(request, env) {
+    async fetch(request, env, ctx) {
         const url = new URL(request.url);
         const path = url.pathname;
 
@@ -36,14 +36,14 @@ export default {
 
         // --- Short Link Redirect ---
         const slug = path.replace(/^\//, '');
-        return handleRedirect(request, env, slug);
+        return handleRedirect(request, env, ctx, slug);
     }
 };
 
 // ============================================
 // SHORT LINK REDIRECT (redirect_logic.php)
 // ============================================
-async function handleRedirect(request, env, slug) {
+async function handleRedirect(request, env, ctx, slug) {
     // 1. Lookup slug in Supabase
     const link = await supabaseQuery(env, 'link', `slug=eq.${slug}`, 'GET');
     if (!link || link.length === 0) {
@@ -63,14 +63,8 @@ async function handleRedirect(request, env, slug) {
     const clientIp = request.headers.get('cf-connecting-ip') || '0.0.0.0';
     const country = (request.cf && request.cf.country) ? request.cf.country.toUpperCase() : 'XX';
 
-    // 5. Fetch Tracker Name
-    let trackerName = 'Unknown';
-    try {
-        const tracker = await supabaseQuery(env, 'tracker', `slug=eq.${linkData.trackerId}`, 'GET');
-        if (tracker && tracker.length > 0) {
-            trackerName = tracker[0].name;
-        }
-    } catch (e) { /* ignore */ }
+    // 5. Tracker Name - use linkData.trackerId directly (stored on the link)
+    const trackerName = linkData.trackerId || 'Unknown';
 
     // Click Recording Logic
     const url = new URL(request.url);
@@ -84,42 +78,50 @@ async function handleRedirect(request, env, slug) {
     const externalId = subId || generateExternalId();
     let dbClickId = 0;
 
-    try {
-        const detectedOS = detectOS(userAgent);
-        const detectedBrowser = detectBrowser(userAgent);
+    // Normalize tracker name to UPPERCASE for consistent reporting
+    const normalizedTracker = (trackerName || 'UNKNOWN').toUpperCase();
+    const normalizedNetwork = (linkData.network || 'UNKNOWN').toUpperCase();
 
-        // Normalize tracker name to UPPERCASE for consistent reporting
-        const normalizedTracker = (trackerName || 'UNKNOWN').toUpperCase();
-        const normalizedNetwork = (linkData.network || 'UNKNOWN').toUpperCase();
+    // Use ctx.waitUntil to keep the Worker alive while we record click + update reports
+    const clickAndReportPromise = (async () => {
+        try {
+            const detectedOS = detectOS(userAgent);
+            const detectedBrowser = detectBrowser(userAgent);
 
-        const clickData = {
-            link_id: linkData.id,
-            slug: slug,
-            ip_address: clientIp,
-            country: country,
-            user_agent: userAgent.substring(0, 500),
-            click_id: generateExternalId(),
-            os: detectedOS,
-            browser: detectedBrowser,
-            referer: request.headers.get('referer') || '',
-            tracker_name: normalizedTracker
-        };
+            const clickData = {
+                link_id: linkData.id,
+                slug: slug,
+                ip_address: clientIp,
+                country: country,
+                user_agent: userAgent.substring(0, 500),
+                click_id: generateExternalId(),
+                os: detectedOS,
+                browser: detectedBrowser,
+                referer: request.headers.get('referer') || '',
+                tracker_name: normalizedTracker
+            };
 
-        const clickResult = await supabaseInsert(env, 'clicks', clickData);
-        if (clickResult && clickResult.length > 0) {
-            dbClickId = clickResult[0].id;
+            // 1. Insert click
+            const clickResult = await supabaseInsert(env, 'clicks', clickData);
+            if (clickResult && clickResult.length > 0) {
+                dbClickId = clickResult[0].id;
+            }
+
+            // 2. Update Daily Reports Aggregate (CRITICAL for reporting!)
+            const today = new Date().toISOString().split('T')[0];
+            const rpcResult = await supabaseRpc(env, 'rpc/increment_click_count', {
+                click_date: today,
+                click_smartlink: normalizedTracker,
+                click_network: normalizedNetwork
+            });
+            console.log(`[RPC OK] ${normalizedTracker} | ${normalizedNetwork} | ${today}`, rpcResult);
+        } catch (e) {
+            console.error('[Click/RPC ERROR]', e);
         }
+    })();
 
-        // Update Daily Reports Aggregate (Real-time Click Tracking)
-        const today = new Date().toISOString().split('T')[0];
-        await supabaseRpc(env, 'rpc/increment_click_count', {
-            click_date: today,
-            click_smartlink: normalizedTracker,
-            click_network: normalizedNetwork
-        });
-    } catch (e) {
-        console.error('Click recording error:', e);
-    }
+    // ctx.waitUntil keeps the Worker alive until the promise resolves
+    ctx.waitUntil(clickAndReportPromise);
 
     // --- Country Blocking (After recording) ---
     if (country === 'ID') {
