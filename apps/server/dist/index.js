@@ -49,7 +49,7 @@ app.use('/api/upload', uploadRoutes_1.default);
 // If slug not found, it calls next()
 app.use('/', redirectRoutes_1.default);
 // SPA Fallback: Serve index.html for any other route
-app.get('*', (req, res) => {
+app.get(/.*/, (req, res) => {
     // Check if we have a built frontend
     const indexHtml = path_1.default.join(__dirname, '../public/index.html');
     res.sendFile(indexHtml, (err) => {
