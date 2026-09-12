@@ -38,6 +38,36 @@ router.get('/', async (req, res) => {
     }
 });
 
+// Helper function to automatically register Custom Domain to Cloudflare Worker
+async function registerCloudflareDomain(domainName: string) {
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || 'fa3e9a63a2f812274447f3c67add0a2b';
+    const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+    if (!apiToken) {
+        console.log('[CF API] process.env.CLOUDFLARE_API_TOKEN missing. Skipping Cloudflare auto-register.');
+        return null;
+    }
+    try {
+        const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/services/redirect-worker/domains`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${apiToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                environment: 'production',
+                hostname: domainName,
+                service: 'redirect-worker'
+            })
+        });
+        const data: any = await response.json();
+        console.log(`[CF API] Registered ${domainName} -> redirect-worker:`, data);
+        return data;
+    } catch (err) {
+        console.error(`[CF API ERROR] Failed registering ${domainName}:`, err);
+        return null;
+    }
+}
+
 // POST create new addon domain
 router.post('/', async (req, res) => {
     try {
@@ -56,12 +86,15 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'Domain already exists' });
         }
 
+        // Auto-register domain to Cloudflare Worker via Cloudflare API
+        await registerCloudflareDomain(domain);
+
         // Create the domain
         const newDomain = await prisma.domain.create({
             data: {
                 name: domain,
                 status: 'Active',
-                ssl: 'Pending'
+                ssl: 'Active'
             }
         });
 

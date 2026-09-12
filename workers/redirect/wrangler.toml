@@ -1,6 +1,7 @@
 name = "redirect-worker"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
+account_id = "fa3e9a63a2f812274447f3c67add0a2b"
 
 workers_dev = true
 
