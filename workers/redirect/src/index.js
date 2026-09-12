@@ -123,10 +123,6 @@ async function handleRedirect(request, env, ctx, slug) {
     // ctx.waitUntil keeps the Worker alive until the promise resolves
     ctx.waitUntil(clickAndReportPromise);
 
-    // --- Country Blocking (Disabled for testing) ---
-    // if (country === 'ID') {
-    //     return Response.redirect('https://www.youtube.com', 302);
-    // }
 
     const trackerParam = encodeURIComponent(trackerName);
 

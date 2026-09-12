@@ -137,10 +137,6 @@ export async function onRequest(context) {
             console.error('Click recording error:', e);
         }
 
-        // --- Country Blocking (Disabled for testing) ---
-        // if (country === 'ID') {
-        //     return Response.redirect('https://www.youtube.com', 302);
-        // }
 
         const trackerParam = encodeURIComponent(trackerName);
 
