@@ -43,9 +43,9 @@ https://your-domain.com/api/postback.php?network=Trafee&click_id={track}&payout=
 https://your-domain.com/api/postback.php?network=Lospollos&click_id={cid}&payout={sum}
 ```
 
-### Clickdealer
+### Torazzo
 ```
-https://your-domain.com/api/postback.php?network=Clickdealer&click_id=#s2#&payout=#price#
+https://your-domain.com/api/postback.php?network=Torazzo&click_id={p1}&payout={payout}&country={country_id}&ip={ip}
 ```
 
 ---

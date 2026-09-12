@@ -305,10 +305,10 @@ router.get('/:slug', async (req, res, next) => {
             timestamp: new Date().toISOString()
         });
 
-        // --- GEO BLOCKING / SAFE PAGE ---
-        if (country === 'ID') {
-            return res.redirect('https://www.youtube.com/watch?v=rQ9YQJ3JpWw');
-        }
+        // --- GEO BLOCKING / SAFE PAGE (Disabled for testing) ---
+        // if (country === 'ID') {
+        //     return res.redirect('https://www.youtube.com/watch?v=rQ9YQJ3JpWw');
+        // }
 
         // 7. Construct Final Redirect URL
         let finalUrl = link.targetUrl;

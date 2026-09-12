@@ -69,7 +69,7 @@ export default function GeoRedirect() {
 
     // Get unique networks from campaigns
     const availableNetworks = [...new Set(campaigns.map(c => c.network))];
-    const networkOptions = availableNetworks.length > 0 ? availableNetworks : ['iMonetizeit', 'Lospollos', 'Clickdealer', 'Trafee'];
+    const networkOptions = availableNetworks.length > 0 ? availableNetworks : ['iMonetizeit', 'Lospollos', 'Torazzo', 'Trafee'];
 
     // Helper to generate random Click ID
     const generateClickId = () => {

@@ -259,7 +259,7 @@ export default function Generator() {
                                         Select Network
                                     </label>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        {['iMonetizeit', 'Lospollos', 'Clickdealer', 'Trafee'].map((network) => (
+                                        {['iMonetizeit', 'Lospollos', 'Torazzo', 'Trafee'].map((network) => (
                                             <button
                                                 key={network}
                                                 onClick={() => setSelectedNetwork(network)}

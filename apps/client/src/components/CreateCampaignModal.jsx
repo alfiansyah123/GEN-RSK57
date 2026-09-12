@@ -21,11 +21,11 @@ const networkConfig = {
         macros: ['{sub_id}', '{click_id}'],
         tokens: ['{cid}', '{sum}']
     },
-    Clickdealer: {
-        urlTemplate: 'https://domain.com/smartlink/?a=164186&sm=20488&mt=16&s1={sub_id}&s2={click_id}&j1=1&j3=1',
-        postbackEndpoint: 'https://domain.com/api/postback.php?network=Clickdealer&click_id=#s2#&payout=#price#',
+    Torazzo: {
+        urlTemplate: 'https://trz.t0r4.com/click?campaign_id=1699&pub_id=1980&p1={click_id}&source={sub_id}',
+        postbackEndpoint: 'https://domain.com/api/postback.php?network=Torazzo&click_id={p1}&payout={payout}&country={country_id}&ip={ip}',
         macros: ['{sub_id}', '{click_id}'],
-        tokens: ['#s2#', '#price#']
+        tokens: ['{p1}', '{payout}']
     }
 };
 
@@ -121,7 +121,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }) {
                                 <option disabled value="">Choose a network...</option>
                                 <option value="iMonetizeit">iMonetizeit</option>
                                 <option value="Lospollos">Lospollos</option>
-                                <option value="Clickdealer">Clickdealer</option>
+                                <option value="Torazzo">Torazzo</option>
                                 <option value="Trafee">Trafee</option>
                             </select>
                             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
