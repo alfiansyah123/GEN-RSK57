@@ -43,7 +43,7 @@ async function registerCloudflareDomain(domainName: string) {
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || 'fa3e9a63a2f812274447f3c67add0a2b';
     const apiToken = process.env.CLOUDFLARE_API_TOKEN;
     if (!apiToken) {
-        console.log('[CF API] process.env.CLOUDFLARE_API_TOKEN missing. Skipping Cloudflare auto-register.');
+        console.log('[CF API] CLOUDFLARE_API_TOKEN missing. Skipping Cloudflare auto-register.');
         return null;
     }
     try {
