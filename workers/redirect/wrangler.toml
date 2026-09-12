@@ -2,9 +2,7 @@ name = "redirect-worker"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
-routes = [
-    { pattern = "joinvibe.biz.id/*", custom_domain = true }
-]
+workers_dev = true
 
 [vars]
 SUPABASE_URL = "https://vtlwptockofzbllnsyrg.supabase.co"

